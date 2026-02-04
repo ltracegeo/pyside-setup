@@ -2230,7 +2230,9 @@ AbstractMetaType *AbstractMetaBuilderPrivate::translateTypeStatic(const TypeInfo
         for (int i = typeInfo.arrayElements().size() - 1; i >= 0; --i) {
             auto *arrayType = new AbstractMetaType;
             arrayType->setArrayElementType(elementType);
-            const QString &arrayElement = typeInfo.arrayElements().at(i);
+            // const QString &arrayElement = typeInfo.arrayElements().at(i);
+            QStringList elements = typeInfo.arrayElements();
+            const QString &arrayElement = elements.at(i);
             if (!arrayElement.isEmpty()) {
                 bool _ok;
                 const qint64 elems = d

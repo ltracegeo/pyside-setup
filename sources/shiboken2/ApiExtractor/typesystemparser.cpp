@@ -1628,7 +1628,9 @@ bool TypeSystemParser::parseInjectDocumentation(const QXmlStreamReader &,
                 return false;
             }
         } else if (name == formatAttribute()) {
-            const QStringRef format = attributes->takeAt(i).value();
+            // const QStringRef format = attributes->takeAt(i).value();
+            auto attr = attributes->takeAt(i);
+            const QStringRef format = attr.value();
             lang = languageFromAttribute(format);
             if (lang != TypeSystem::TargetLangCode && lang != TypeSystem::NativeCode) {
                 m_error = QStringLiteral("unsupported class attribute: '%1'").arg(format);

@@ -712,84 +712,10 @@ PyObject *PepMapping_Items(PyObject *o)
 # define PyUnicode_GET_LENGTH(op)    PyUnicode_GetLength((PyObject *)(op))
 # define PyUnicode_READ_CHAR(u, i)   PyUnicode_ReadChar((PyObject *)(u), (i))
 #endif // Py_LIMITED_API
-
-PyObject *
-_Pep_PrivateMangle(PyObject *self, PyObject *name)
+PyObject* _Pep_PrivateMangle(PyObject* privateobj, PyObject* name)
 {
-    /*
-     * Name mangling: __private becomes _classname__private.
-     * This function is modelled after _Py_Mangle, but is optimized
-     * a little for our purpose.
-     */
-#ifdef IS_PY2
-    const char *namestr = PyString_AsString(name);
-    if (namestr == nullptr || namestr[0] != '_' || namestr[1] != '_') {
-        Py_INCREF(name);
-        return name;
-    }
-    size_t nlen = strlen(namestr);
-    /* Don't mangle __id__ or names with dots. */
-    if ((namestr[nlen-1] == '_' && namestr[nlen-2] == '_')
-        || strchr(namestr, '.')) {
-        Py_INCREF(name);
-        return name;
-    }
-#else
-    if (PyUnicode_READ_CHAR(name, 0) != '_' ||
-        PyUnicode_READ_CHAR(name, 1) != '_') {
-        Py_INCREF(name);
-        return name;
-    }
-    size_t nlen = PyUnicode_GET_LENGTH(name);
-    /* Don't mangle __id__ or names with dots. */
-    if ((PyUnicode_READ_CHAR(name, nlen-1) == '_' &&
-         PyUnicode_READ_CHAR(name, nlen-2) == '_') ||
-        PyUnicode_FindChar(name, '.', 0, nlen, 1) != -1) {
-        Py_INCREF(name);
-        return name;
-    }
-#endif // IS_PY2
-    Shiboken::AutoDecRef privateobj(PyObject_GetAttr(
-        reinterpret_cast<PyObject *>(Py_TYPE(self)), Shiboken::PyMagicName::name()));
-#ifndef Py_LIMITED_API
-    return _Py_Mangle(privateobj, name);
-#else
-    // PYSIDE-1436: _Py_Mangle is no longer exposed; implement it always.
-    // The rest of this function is our own implementation of _Py_Mangle.
-    // Please compare the original function in compile.c .
-    size_t plen = PyUnicode_GET_LENGTH(privateobj.object());
-    /* Strip leading underscores from class name */
-    size_t ipriv = 0;
-    while (PyUnicode_READ_CHAR(privateobj.object(), ipriv) == '_')
-        ipriv++;
-    if (ipriv == plen) {
-        Py_INCREF(name);
-        return name; /* Don't mangle if class is just underscores */
-    }
-    plen -= ipriv;
-
-    if (plen + nlen >= PY_SSIZE_T_MAX - 1) {
-        PyErr_SetString(PyExc_OverflowError,
-                        "private identifier too large to be mangled");
-        return nullptr;
-    }
-    size_t const amount = ipriv + 1 + plen + nlen;
-    size_t const big_stack = 1000;
-    wchar_t bigbuf[big_stack];
-    wchar_t *resbuf = amount <= big_stack ? bigbuf : (wchar_t *)malloc(sizeof(wchar_t) * amount);
-    if (!resbuf)
-        return 0;
-    /* ident = "_" + priv[ipriv:] + ident # i.e. 1+plen+nlen bytes */
-    resbuf[0] = '_';
-    if (PyUnicode_AsWideChar(privateobj, resbuf + 1, ipriv + plen) < 0)
-        return 0;
-    if (PyUnicode_AsWideChar(name, resbuf + ipriv + plen + 1, nlen) < 0)
-        return 0;
-    PyObject *result = PyUnicode_FromWideChar(resbuf + ipriv, 1 + plen + nlen);
-    if (amount > big_stack)
-        free(resbuf);
-    return result;
-#endif // else Py_LIMITED_API
+    Py_XINCREF(name);
+    return name;
 }
 
 /*****************************************************************************
