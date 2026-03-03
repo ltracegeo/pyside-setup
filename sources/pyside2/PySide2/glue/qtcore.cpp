@@ -1713,7 +1713,7 @@ Py_END_ALLOW_THREADS
 // @snippet conversion-pylong-quintptr
 
 // @snippet conversion-pyunicode
-#ifndef Py_LIMITED_API
+#if !defined(Py_LIMITED_API) && PY_VERSION_HEX < 0x030C0000
 Py_UNICODE *unicode = PyUnicode_AS_UNICODE(%in);
 #  if defined(Py_UNICODE_WIDE)
 // cast as Py_UNICODE can be a different type
@@ -1730,9 +1730,20 @@ Py_UNICODE *unicode = PyUnicode_AS_UNICODE(%in);
 #    endif // Qt 6
 # endif
 #else
-wchar_t *temp = PyUnicode_AsWideCharString(%in, NULL);
-%out = QString::fromWCharArray(temp);
-PyMem_Free(temp);
+// Python 3.12+ (PyUnicode_AS_UNICODE removed) or Limited API
+Py_ssize_t size;
+const char *utf8 = PyUnicode_AsUTF8AndSize(%in, &size);
+if (utf8) {
+    %out = QString::fromUtf8(utf8, size);
+} else {
+    // Fallback if UTF-8 conversion fails (e.g. MemoryError)
+    if (PyErr_Occurred()) PyErr_Clear();
+    wchar_t *temp = PyUnicode_AsWideCharString(%in, NULL);
+    if (temp) {
+        %out = QString::fromWCharArray(temp);
+        PyMem_Free(temp);
+    }
+}
 #endif
 // @snippet conversion-pyunicode
 

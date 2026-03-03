@@ -48,13 +48,42 @@ from email.generator import Generator
 from .wheel_utils import get_package_version, get_qt_version, macos_plat_name
 
 try:
-
     from distutils import log as logger
     from wheel.bdist_wheel import bdist_wheel as _bdist_wheel
-    from wheel.bdist_wheel import safer_name as _safer_name
-    from wheel.bdist_wheel import get_abi_tag, get_platform
     from packaging import tags
     from wheel import __version__ as wheel_version
+    import sysconfig
+    import re
+
+    # Fix 1: safer_name (removed in wheel >= 0.34.0)
+    try:
+        from wheel.bdist_wheel import safer_name as _safer_name
+    except ImportError:
+        def _safer_name(name):
+            # Force lowercase to match modern setuptools behavior
+            return re.sub(r"[^A-Za-z0-9.]+", "_", name).lower()
+
+    # Fix 2: get_abi_tag (removed in modern wheel)
+    try:
+        from wheel.bdist_wheel import get_abi_tag
+    except ImportError:
+        def get_abi_tag():
+            # Use packaging.tags to get the current ABI tag
+            try:
+                # Get the first tag (most specific) and return its ABI part
+                return list(tags.sys_tags())[0].abi
+            except IndexError:
+                return "none"
+
+    # Fix 3: get_platform (removed in modern wheel)
+    try:
+        from wheel.bdist_wheel import get_platform
+    except ImportError:
+        def get_platform(archive_root):
+            # Fallback to sysconfig platform, replacing hyphens with underscores
+            # to match wheel naming conventions
+            return sysconfig.get_platform().replace('-', '_').replace('.', '_')
+
 
     wheel_module_exists = True
 except Exception as e:

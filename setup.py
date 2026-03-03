@@ -290,7 +290,6 @@ from build_scripts.setup_runner import SetupRunner
 # used as a value source. Use get_package_version() instead.
 __version__ = get_package_version()
 
-check_allowed_python_version()
 
 setup_runner = SetupRunner(original_argv)
 setup_runner.run_setup()

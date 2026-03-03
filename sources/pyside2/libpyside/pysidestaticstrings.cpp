@@ -51,6 +51,19 @@ namespace PySide
 {
 namespace PyName
 {
+
+void init()
+{
+    (void)qtStaticMetaObject();
+    (void)qtConnect();
+    (void)qtDisconnect();
+    (void)qtEmit();
+    (void)dict_ring();
+    (void)name();
+    (void)property();
+    (void)select_id();
+}
+
 STATIC_STRING_IMPL(qtStaticMetaObject, "staticMetaObject")
 STATIC_STRING_IMPL(qtConnect, "connect")
 STATIC_STRING_IMPL(qtDisconnect, "disconnect")

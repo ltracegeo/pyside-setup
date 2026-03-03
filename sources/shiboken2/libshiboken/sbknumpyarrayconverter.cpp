@@ -51,6 +51,11 @@
 
 enum { debugNumPy = 0 };
 
+#ifndef NPY_ARRAY_UPDATEIFCOPY
+#define NPY_ARRAY_UPDATEIFCOPY NPY_ARRAY_WRITEBACKIFCOPY
+#endif
+
+
 struct TypeCharMapping
 {
     NPY_TYPES type;

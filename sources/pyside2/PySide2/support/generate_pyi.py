@@ -115,7 +115,6 @@ class Formatter(Writer):
         """
         def _typevar__repr__(self):
             return "typing." + self.__name__
-        typing.TypeVar.__repr__ = _typevar__repr__
 
         # Adding a pattern to substitute "Union[T, NoneType]" by "Optional[T]"
         # I tried hard to replace typing.Optional by a simple override, but
@@ -269,6 +268,7 @@ def generate_pyi(import_name, outpath, options):
 
 
 def generate_all_pyi(outpath, options):
+    return
     ps = os.pathsep
     if options.sys_path:
         # make sure to propagate the paths from sys_path to subprocesses
@@ -323,5 +323,5 @@ if __name__ == "__main__":
     if outpath and not os.path.exists(outpath):
         os.makedirs(outpath)
         logger.info("+++ Created path {outpath}".format(**locals()))
-    generate_all_pyi(outpath, options=options)
+    # generate_all_pyi(outpath, options=options)
 # eof

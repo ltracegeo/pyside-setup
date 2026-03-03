@@ -245,19 +245,22 @@ static StaticStrings &staticStrings()
 
 static void finalizeStaticStrings()
 {
+#if PY_VERSION_HEX < 0x030C0000
     auto &set = staticStrings();
     for (PyObject *ob : set) {
         Py_SET_REFCNT(ob, 1);
         Py_DECREF(ob);
     }
     set.clear();
+#endif
 }
-
 PyObject *createStaticString(const char *str)
 {
     static bool initialized = false;
     if (!initialized) {
+#if PY_VERSION_HEX < 0x030C0000
         Py_AtExit(finalizeStaticStrings);
+#endif
         initialized = true;
     }
 #if PY_VERSION_HEX >= 0x03000000

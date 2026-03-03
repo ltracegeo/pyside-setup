@@ -443,16 +443,25 @@ namespace {
 
 static PyObject *getFromType(PyTypeObject *type, PyObject *name)
 {
+    if (!type)
+        return nullptr;
+
     PyObject *attr = nullptr;
-    attr = PyDict_GetItem(type->tp_dict, name);
+
+    if (type->tp_dict) {
+        attr = PyDict_GetItem(type->tp_dict, name);
+    }
+
     if (!attr) {
         PyObject *bases = type->tp_bases;
-        int size = PyTuple_GET_SIZE(bases);
-        for(int i=0; i < size; i++) {
-            PyObject *base = PyTuple_GET_ITEM(bases, i);
-            attr = getFromType(reinterpret_cast<PyTypeObject *>(base), name);
-            if (attr)
-                return attr;
+        if (bases) {
+            Py_ssize_t size = PyTuple_GET_SIZE(bases);
+            for (Py_ssize_t i = 0; i < size; i++) {
+                PyObject *base = PyTuple_GET_ITEM(bases, i);
+                attr = getFromType(reinterpret_cast<PyTypeObject *>(base), name);
+                if (attr)
+                    return attr;
+            }
         }
     }
     return attr;

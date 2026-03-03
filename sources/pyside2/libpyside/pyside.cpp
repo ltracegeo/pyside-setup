@@ -86,6 +86,10 @@ namespace PySide
 void init(PyObject *module)
 {
     qobjectNextAddr = 0;
+
+    // FIX: Initialize static strings (Py3.12 Segfault Fix)
+    PySide::PyName::init();
+
     ClassInfo::init(module);
     Signal::init(module);
     Slot::init(module);
@@ -311,8 +315,17 @@ void initQApp()
 PyObject *getMetaDataFromQObject(QObject *cppSelf, PyObject *self, PyObject *name)
 {
     PyObject *attr = PyObject_GenericGetAttr(self, name);
-    if (!Shiboken::Object::isValid(reinterpret_cast<SbkObject *>(self), false))
+    
+    if (!attr && !PyErr_ExceptionMatches(PyExc_AttributeError))
+        return nullptr;
+    
+    if (!attr) PyErr_Clear();
+
+    if (!Shiboken::Object::isValid(reinterpret_cast<SbkObject *>(self), false)) {
+        if (!attr && !PyErr_Occurred())
+             PyErr_SetObject(PyExc_AttributeError, name);
         return attr;
+    }
 
     if (attr && Property::checkType(attr)) {
         PyObject *value = Property::getValue(reinterpret_cast<PySideProperty *>(attr), self);
@@ -362,6 +375,14 @@ PyObject *getMetaDataFromQObject(QObject *cppSelf, PyObject *self, PyObject *nam
             }
         }
     }
+
+    // FIX: Python 3.12 SystemError prevention.
+    // If we found nothing (attr is NULL) and no exception is set (because we cleared it),
+    // we MUST set AttributeError now.
+    if (!attr && !PyErr_Occurred()) {
+        PyErr_SetObject(PyExc_AttributeError, name);
+    }
+
     return attr;
 }
 

@@ -122,7 +122,7 @@ public:
 #ifndef NDEBUG
 static void showWrapperMap(const WrapperMap &wrapperMap)
 {
-    if (Py_VerboseFlag > 0) {
+    if (0) {
         fprintf(stderr, "-------------------------------\n");
         fprintf(stderr, "WrapperMap: %p (size: %d)\n", &wrapperMap, (int) wrapperMap.size());
         for (auto it = wrapperMap.begin(), end = wrapperMap.end(); it != end; ++it) {

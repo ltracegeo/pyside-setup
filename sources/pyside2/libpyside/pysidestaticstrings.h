@@ -41,11 +41,13 @@
 #define PYSIDESTRINGS_H
 
 #include <sbkpython.h>
+#include "pysidemacros.h"
 
 namespace PySide
 {
 namespace PyName
 {
+PYSIDE_API void init();
 PyObject *qtStaticMetaObject();
 PyObject *qtConnect();
 PyObject *qtDisconnect();

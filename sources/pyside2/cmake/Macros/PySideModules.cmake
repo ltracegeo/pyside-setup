@@ -167,7 +167,7 @@ macro(create_pyside_module)
     if (WIN32)
         set(ld_prefix_var_name "PATH")
     elseif(APPLE)
-        set(ld_prefix_var_name "DYLD_LIBRARY_PATH")
+        set(ld_prefix_var_name "DYLD_FALLBACK_LIBRARY_PATH")
     else()
         set(ld_prefix_var_name "LD_LIBRARY_PATH")
     endif()
@@ -213,9 +213,8 @@ macro(create_pyside_module)
     # install
     install(TARGETS ${module_NAME} LIBRARY DESTINATION "${PYTHON_SITE_PACKAGES}/PySide2")
 
-    file(GLOB hinting_stub_files RELATIVE "${CMAKE_CURRENT_BINARY_DIR}/PySide2" "${CMAKE_CURRENT_BINARY_DIR}/PySide2/*.pyi")
-    install(FILES ${hinting_stub_files}
-            DESTINATION "${PYTHON_SITE_PACKAGES}/PySide2")
+    install(FILES "${CMAKE_CURRENT_BINARY_DIR}/../${module_NAME}.pyi"
+	    DESTINATION "${PYTHON_SITE_PACKAGES}/PySide2" OPTIONAL)
 
     install(FILES ${CMAKE_CURRENT_BINARY_DIR}/PySide2/${module_NAME}/pyside2_${lower_module_name}_python.h
             DESTINATION include/PySide2${pyside2_SUFFIX}/${module_NAME}/)

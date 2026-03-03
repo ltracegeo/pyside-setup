@@ -106,6 +106,7 @@ int add_more_getsets(PyTypeObject *type, PyGetSetDef *gsp, PyObject **doc_descr)
     assert(PyType_Check(type));
     PyType_Ready(type);
     PyObject *dict = type->tp_dict;
+    if (dict == NULL) dict = PyType_GetDict(type);
     for (; gsp->name != nullptr; gsp++) {
         PyObject *have_descr = PyDict_GetItemString(dict, gsp->name);
         if (have_descr != nullptr) {
@@ -347,6 +348,7 @@ static int _build_func_to_type(PyObject *obtype)
      */
     auto *type = reinterpret_cast<PyTypeObject *>(obtype);
     PyObject *dict = type->tp_dict;
+    if (dict == NULL) dict = PyType_GetDict(type);
     PyMethodDef *meth = type->tp_methods;
 
     if (meth == nullptr)

@@ -96,6 +96,8 @@
   <rejection class="^QOpenGL.*$" argument-type="^(const )?char ?\*\*$"/>
   <rejection class="^QOpenGL.*$" argument-type="GLintptr"/>
   <rejection class="^QOpenGL.*$" argument-type="GLsizeiptr"/>
+  <rejection class="^QOpenGL.*$" argument-type="int64_t*"/>
+  <rejection class="^QOpenGL.*$" argument-type="int32_t*"/>
   <rejection class="^QOpenGL.*$" argument-type="GLsync"/>
   <rejection class="^QOpenGL.*$" argument-type="^GLubyte( const)?\*$"/>
   <rejection class="^QOpenGL.*$" argument-type="^(const )?QMatrix.x. ?\*$"/>
@@ -1430,7 +1432,7 @@
   </object-type>
 
   <object-type name="QDragEnterEvent" polymorphic-id-expression="%1-&gt;type() == QEvent::DragEnter"/>
-  <object-type name="QDragLeaveEvent" polymorphic-id-expression="%1-&gt;type() == QEvent::DragLeave"/>
+  <object-type name="QDragLeaveEvent" polymorphic-id-expression="%1-&gt;type() == QEvent::DragLeave"/>  
   <object-type name="QDragMoveEvent" polymorphic-id-expression="%1-&gt;type() == QEvent::DragMove"/>
   <object-type name="QDropEvent" polymorphic-id-expression="%1-&gt;type() == QEvent::Drop">
     <modify-function signature="source()const">
