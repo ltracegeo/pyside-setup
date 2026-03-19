@@ -751,7 +751,7 @@ _Pep_PrivateMangle(PyObject *self, PyObject *name)
 #endif // IS_PY2
     Shiboken::AutoDecRef privateobj(PyObject_GetAttr(
         reinterpret_cast<PyObject *>(Py_TYPE(self)), Shiboken::PyMagicName::name()));
-#ifndef Py_LIMITED_API
+#if !defined(Py_LIMITED_API) && PY_VERSION_HEX < 0x030c0000
     return _Py_Mangle(privateobj, name);
 #else
     // PYSIDE-1436: _Py_Mangle is no longer exposed; implement it always.
@@ -809,6 +809,39 @@ init_PepRuntime()
         return;
     if (std::atoi(version + 2) >= 8)
         PepRuntime_38_flag = 1;
+}
+
+#ifdef Py_LIMITED_API
+static PyObject *emulatePyType_GetDict(PyTypeObject *type)
+{
+    if (_PepRuntimeVersion() < 0x030C00 || type->tp_dict) {
+        auto *res = type->tp_dict;
+        Py_XINCREF(res);
+        return res;
+    }
+    // PYSIDE-2230: Here we are really cheating. We don't know how to
+    //              access an internal dict, and so we simply pretend
+    //              it were an empty dict. This works great for our types.
+    // This was an unexpectedly simple solution :D
+    return PyDict_New();
+}
+#endif
+
+// PyType_GetDict: replacement for <static type>.tp_dict, which is
+// zero for builtin types since 3.12.
+PyObject *PepType_GetDict(PyTypeObject *type)
+{
+#if !defined(Py_LIMITED_API)
+#  if PY_VERSION_HEX >= 0x030C0000
+    return PyType_GetDict(type);
+#  else
+    // pre 3.12 fallback code, mimicking the addref-behavior.
+    Py_XINCREF(type->tp_dict);
+    return type->tp_dict;
+#  endif
+#else
+    return emulatePyType_GetDict(type);
+#endif // Py_LIMITED_API
 }
 
 /*****************************************************************************

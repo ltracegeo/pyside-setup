@@ -366,7 +366,7 @@ SbkObjectType *SbkObject_TypeF(void)
     static PyTypeObject *type = nullptr;
     if (!type) {
         type = reinterpret_cast<PyTypeObject *>(SbkType_FromSpec(&SbkObject_Type_spec));
-        Py_TYPE(type) = SbkObjectType_TypeF();
+        Py_SET_TYPE(type, SbkObjectType_TypeF());
         Py_INCREF(Py_TYPE(type));
         type->tp_weaklistoffset = offsetof(SbkObject, weakreflist);
         type->tp_dictoffset = offsetof(SbkObject, ob_dict);
@@ -1110,7 +1110,7 @@ introduceWrapperType(PyObject *enclosingObject,
     typeSpec->slots[0].pfunc = reinterpret_cast<void *>(baseType ? baseType : SbkObject_TypeF());
 
     PyObject *heaptype = SbkType_FromSpecWithBases(typeSpec, baseTypes);
-    Py_TYPE(heaptype) = SbkObjectType_TypeF();
+    Py_SET_TYPE(heaptype, SbkObjectType_TypeF());
     Py_INCREF(Py_TYPE(heaptype));
     auto *type = reinterpret_cast<SbkObjectType *>(heaptype);
 #if PY_VERSION_HEX < 0x03000000

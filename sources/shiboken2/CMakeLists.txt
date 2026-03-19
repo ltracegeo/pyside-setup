@@ -161,7 +161,7 @@ execute_process(
             pass
 
         try:
-            from distutils import sysconfig
+            import setuptools; from distutils import sysconfig
             config_py_debug = sysconfig.get_config_var('Py_DEBUG')
             if config_py_debug:
                 is_py_debug = True

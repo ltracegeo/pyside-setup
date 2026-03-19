@@ -64,7 +64,7 @@ import platform
 import textwrap
 import contextlib
 
-from distutils import log
+import setuptools; from distutils import log
 
 try:
     from urllib.request import urlopen

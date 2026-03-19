@@ -38,7 +38,7 @@
 #############################################################################
 
 from __future__ import print_function
-from distutils.version import LooseVersion
+import setuptools; from distutils.version import LooseVersion
 
 import os
 import platform
@@ -243,15 +243,15 @@ from setuptools.command.bdist_egg import bdist_egg as _bdist_egg
 from setuptools.command.develop import develop as _develop
 from setuptools.command.build_py import build_py as _build_py
 
-import distutils.log as log
-from distutils.errors import DistutilsSetupError
-from distutils.sysconfig import get_config_var
-from distutils.sysconfig import get_python_lib
-from distutils.spawn import find_executable
-from distutils.command.build import build as _build
-from distutils.command.build_ext import build_ext as _build_ext
-from distutils.util import get_platform
-from distutils.cmd import Command
+import setuptools; import distutils.log as log
+import setuptools; from distutils.errors import DistutilsSetupError
+import setuptools; from distutils.sysconfig import get_config_var
+import setuptools; from distutils.sysconfig import get_python_lib
+import setuptools; from distutils.spawn import find_executable
+import setuptools; from distutils.command.build import build as _build
+import setuptools; from distutils.command.build_ext import build_ext as _build_ext
+import setuptools; from distutils.util import get_platform
+import setuptools; from distutils.cmd import Command
 
 from .qtinfo import QtInfo
 from .utils import rmtree, detect_clang, copyfile, copydir, run_process_output, run_process

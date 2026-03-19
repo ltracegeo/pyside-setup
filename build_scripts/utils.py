@@ -54,8 +54,8 @@ try:
 except ImportError:
     import urllib
 
-import distutils.log as log
-from distutils.errors import DistutilsSetupError
+import setuptools; import distutils.log as log
+import setuptools; from distutils.errors import DistutilsSetupError
 
 try:
     WindowsError
@@ -82,10 +82,10 @@ def update_env_path(newpaths):
 
 
 def winsdk_setenv(platform_arch, build_type):
-    from distutils.msvc9compiler import VERSION as MSVC_VERSION
-    from distutils.msvc9compiler import Reg
-    from distutils.msvc9compiler import HKEYS
-    from distutils.msvc9compiler import WINSDK_BASE
+    import setuptools; from distutils.msvc9compiler import VERSION as MSVC_VERSION
+    import setuptools; from distutils.msvc9compiler import Reg
+    import setuptools; from distutils.msvc9compiler import HKEYS
+    import setuptools; from distutils.msvc9compiler import WINSDK_BASE
 
     sdk_version_map = {
         "v6.0a": 9.0,
@@ -144,8 +144,8 @@ def find_vcdir(version):
     This is the customized version of
     distutils.msvc9compiler.find_vcvarsall method
     """
-    from distutils.msvc9compiler import VS_BASE
-    from distutils.msvc9compiler import Reg
+    import setuptools; from distutils.msvc9compiler import VS_BASE
+    import setuptools; from distutils.msvc9compiler import Reg
     vsbase = VS_BASE % version
     try:
         productdir = Reg.get_value(r"{}\Setup\VC".format(vsbase), "productdir")
@@ -155,7 +155,7 @@ def find_vcdir(version):
     # trying Express edition
     if productdir is None:
         try:
-            from distutils.msvc9compiler import VSEXPRESS_BASE
+            import setuptools; from distutils.msvc9compiler import VSEXPRESS_BASE
         except ImportError:
             pass
         else:
@@ -185,7 +185,7 @@ def find_vcdir(version):
 
 
 def init_msvc_env(platform_arch, build_type):
-    from distutils.msvc9compiler import VERSION as MSVC_VERSION
+    import setuptools; from distutils.msvc9compiler import VERSION as MSVC_VERSION
 
     log.info("Searching MSVC compiler version {}".format(MSVC_VERSION))
     vcdir_path = find_vcdir(MSVC_VERSION)

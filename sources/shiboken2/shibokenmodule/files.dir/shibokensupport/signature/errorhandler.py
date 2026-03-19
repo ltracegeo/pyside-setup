@@ -113,6 +113,12 @@ def seterror_argument(args, func_name):
     if found:
         msg = dedent("""
             '{func_name}' called with wrong argument values:
+    if isinstance(info, Exception):
+        # PYSIDE-2230: Python 3.12 seems to always do normalization.
+        err = type(info)
+        info = info.args[0]
+        msg = f"{func_name}(): {info}"
+        return err, msg
               {func_name}{args}
             Found signature:
               {func_name}{found}

@@ -162,7 +162,7 @@ PyTypeObject *PySideSignalTypeF(void)
     if (!type) {
         type = reinterpret_cast<PyTypeObject *>(SbkType_FromSpec(&PySideSignalType_spec));
         PyTypeObject *hold = Py_TYPE(type);
-        Py_TYPE(type) = PySideMetaSignalTypeF();
+        Py_SET_TYPE(type, PySideMetaSignalTypeF());
         Py_INCREF(Py_TYPE(type));
         Py_DECREF(hold);
     }
@@ -669,8 +669,8 @@ void updateSourceObject(PyObject *source)
     Py_ssize_t pos = 0;
     PyObject *value;
     PyObject *key;
-
-    while (PyDict_Next(objType->tp_dict, &pos, &key, &value)) {
+    Shiboken::AutoDecRef tpDict(PepType_GetDict(objType));
+    while (PyDict_Next(tpDict, &pos, &key, &value)) {
         if (PyObject_TypeCheck(value, PySideSignalTypeF())) {
             Shiboken::AutoDecRef signalInstance(reinterpret_cast<PyObject *>(PyObject_New(PySideSignalInstance, PySideSignalInstanceTypeF())));
             instanceInitialize(signalInstance.cast<PySideSignalInstance *>(), key, reinterpret_cast<PySideSignal *>(value), source, 0);

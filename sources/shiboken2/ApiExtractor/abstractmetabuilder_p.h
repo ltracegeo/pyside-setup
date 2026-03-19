@@ -154,6 +154,7 @@ public:
                                                  TranslateTypeFlags flags = {},
                                                  QString *errorMessageIn = nullptr);
     static TypeEntries findTypeEntries(const QString &qualifiedName, const QString &name,
+                                       TranslateTypeFlags flags = {},
                                        AbstractMetaClass *currentClass = nullptr,
                                        AbstractMetaBuilderPrivate *d = nullptr);
 

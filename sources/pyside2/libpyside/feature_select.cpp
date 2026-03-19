@@ -355,7 +355,8 @@ static bool SelectFeatureSetSubtype(PyTypeObject *type, PyObject *select_id)
      * This is the selector for one sublass. We need to call this for
      * every subclass until no more subclasses or reaching the wanted id.
      */
-    if (Py_TYPE(type->tp_dict) == Py_TYPE(PyType_Type.tp_dict)) {
+    static const auto *pyTypeType_tp_dict = PepType_GetDict(&PyType_Type);
+    if (Py_TYPE(type->tp_dict) == Py_TYPE(pyTypeType_tp_dict)) {
         // On first touch, we initialize the dynamic naming.
         // The dict type will be replaced after the first call.
         if (!replaceClassDict(type)) {
@@ -382,7 +383,8 @@ static inline PyObject *SelectFeatureSet(PyTypeObject *type)
      * Generated functions call this directly.
      * Shiboken will assign it via a public hook of `basewrapper.cpp`.
      */
-    if (Py_TYPE(type->tp_dict) == Py_TYPE(PyType_Type.tp_dict)) {
+    static const auto *pyTypeType_tp_dict = PepType_GetDict(&PyType_Type);
+    if (Py_TYPE(type->tp_dict) == Py_TYPE(pyTypeType_tp_dict)) {
         // We initialize the dynamic features by using our own dict type.
         if (!replaceClassDict(type))
             return nullptr;
@@ -653,6 +655,11 @@ typedef struct {
     PyObject *prop_set;
     PyObject *prop_del;
     PyObject *prop_doc;
+#if PY_VERSION_HEX >= 0x030A0000
+    // Note: This is a problem with Limited API: We have no direct access.
+    //       You need to pick it from runtime info.
+    PyObject *prop_name;
+#endif
     int getter_doc;
 } propertyobject;
 
@@ -698,11 +705,11 @@ static bool patch_property_impl()
     // Turn `__doc__` into a computed attribute without changing writability.
     auto gsp = property_getset;
     auto type = &PyProperty_Type;
-    auto dict = type->tp_dict;
+    AutoDecRef dict(PepType_GetDict(type));
     AutoDecRef descr(PyDescr_NewGetSet(type, gsp));
     if (descr.isNull())
         return false;
-    if (PyDict_SetItemString(dict, gsp->name, descr) < 0)
+    if (PyDict_SetItemString(dict.object(), gsp->name, descr) < 0)
         return false;
     // Replace property_descr_get/set by slightly changed versions
     return true;

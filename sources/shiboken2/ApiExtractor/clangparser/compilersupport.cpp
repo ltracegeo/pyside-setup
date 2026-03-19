@@ -337,11 +337,15 @@ QByteArrayList emulatedCompilerOptions()
     // A fix for this has been added to Clang 5.0, so, the code can be removed
     // once Clang 5.0 is the minimum version.
     if (needsGppInternalHeaders()) {
-        const HeaderPaths gppPaths = gppInternalIncludePaths(compilerFromCMake(QStringLiteral("g++")));
+    const HeaderPaths gppPaths = gppInternalIncludePaths(QStringLiteral("g++"));
         for (const HeaderPath &h : gppPaths) {
-            if (h.path.contains("c++")
-                || h.path.contains("sysroot")) { // centOS
+        // PySide2 requires that Qt headers are not -isystem
+        // https://bugreports.qt.io/browse/PYSIDE-787
+        if (!h.path.contains("-qt")) {
+            // add using -isystem
                 headerPaths.append(h);
+        } else {
+            headerPaths.append({h.path, HeaderType::Standard});
             }
         }
     }

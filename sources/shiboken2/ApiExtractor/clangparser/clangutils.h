@@ -52,6 +52,8 @@ QString getCursorKindName(CXCursorKind cursorKind);
 QString getCursorSpelling(const CXCursor &cursor);
 QString getCursorDisplayName(const CXCursor &cursor);
 QString getTypeName(const CXType &type);
+bool hasScopeResolution(const CXType &type);
+QString getResolvedTypeName(const CXType &type);
 inline QString getCursorTypeName(const CXCursor &cursor)
     { return getTypeName(clang_getCursorType(cursor)); }
 inline QString getCursorResultTypeName(const CXCursor &cursor)

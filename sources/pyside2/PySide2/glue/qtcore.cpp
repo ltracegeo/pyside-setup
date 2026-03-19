@@ -1713,7 +1713,7 @@ Py_END_ALLOW_THREADS
 // @snippet conversion-pylong-quintptr
 
 // @snippet conversion-pyunicode
-#ifndef Py_LIMITED_API
+#if !defined(Py_LIMITED_API) && PY_VERSION_HEX < 0x030c0000
 Py_UNICODE *unicode = PyUnicode_AS_UNICODE(%in);
 #  if defined(Py_UNICODE_WIDE)
 // cast as Py_UNICODE can be a different type
