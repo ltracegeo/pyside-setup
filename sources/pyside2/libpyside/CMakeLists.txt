@@ -26,7 +26,7 @@ if(Qt${QT_MAJOR_VERSION}Qml_FOUND)
 
     if(Qt${QT_MAJOR_VERSION}Qml_PRIVATE_INCLUDE_DIRS)
         # Used for transforming QML exceptions into Python exceptions.
-        set(QML_PRIVATE_API_SUPPORT 1)
+        set(QML_PRIVATE_API_SUPPORT 0)
         set(QML_INCLUDES ${QML_INCLUDES} ${Qt${QT_MAJOR_VERSION}Qml_PRIVATE_INCLUDE_DIRS})
     else()
         message(WARNING "QML private API include files could not be found, support for catching QML exceptions inside Python code will not work.")

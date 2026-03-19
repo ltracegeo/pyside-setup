@@ -237,7 +237,7 @@ void HeaderGenerator::writeFunction(QTextStream &s, const AbstractMetaFunction *
 
     if (avoidProtectedHack() && func->isProtected() && !func->isConstructor() && !func->isOperatorOverload()) {
         s << INDENT << "inline " << (func->isStatic() ? "static " : "");
-        s << functionSignature(func, QString(), QLatin1String("_protected"), Generator::EnumAsInts|Generator::OriginalTypeDescription)
+        s << functionSignature(func, QString(), QLatin1String("_protected"), Generator::EnumAsInts|Generator::OriginalTypeDescription|Generator::SkipDefaultValues)
             << " { ";
         if (!func->isVoid())
             s << "return ";

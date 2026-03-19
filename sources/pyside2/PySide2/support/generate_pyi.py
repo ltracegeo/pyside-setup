@@ -116,8 +116,12 @@ class Formatter(Writer):
         """
         def _typevar__repr__(self):
             return "typing." + self.__name__
-        typing.TypeVar.__repr__ = _typevar__repr__
-
+        # This is no longer necessary for modern typing versions.
+        # Ignore therefore if the repr is read-only and cannot be changed.
+        try:
+            typing.TypeVar.__repr__ = _typevar__repr__
+        except TypeError:
+            pass
         # Adding a pattern to substitute "Union[T, NoneType]" by "Optional[T]"
         # I tried hard to replace typing.Optional by a simple override, but
         # this became _way_ too much.
@@ -315,4 +319,8 @@ if __name__ == "__main__":
         os.makedirs(outpath)
         logger.info("+++ Created path {outpath}".format(**locals()))
     generate_all_pyi(outpath, options=options)
+    # Python 3.12: PySide2 module cleanup crashes on interpreter shutdown.
+    # The .pyi file is already written; skip shutdown to avoid the access violation.
+    import os as _os
+    _os._exit(0)
 # eof

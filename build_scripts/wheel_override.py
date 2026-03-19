@@ -42,7 +42,7 @@ import os
 import sys
 import platform
 from .options import DistUtilsCommandMixin, OPTION
-from distutils import log as logger
+import setuptools; from distutils import log as logger
 from email.generator import Generator
 from .wheel_utils import get_package_version, get_qt_version, macos_plat_name
 from .utils import is_64bit
@@ -52,10 +52,23 @@ wheel_module_exists = False
 
 try:
 
-    from distutils import log as logger
+    import setuptools; from distutils import log as logger
     from wheel.bdist_wheel import bdist_wheel as _bdist_wheel
-    from wheel.bdist_wheel import safer_name as _safer_name
-    from wheel.bdist_wheel import get_abi_tag, get_platform
+
+    try:
+        from wheel.bdist_wheel import safer_name as _safer_name
+    except ImportError:
+        try:
+            from setuptools._normalization import safer_name as _safer_name
+        except ImportError:
+            import re
+            def _safer_name(name):
+                return re.sub(r"[^\w\d.]", "_", name).lower()
+    try:
+        from wheel.bdist_wheel import get_abi_tag, get_platform
+    except ImportError:
+        from wheel._bdist_wheel import get_abi_tag, get_platform
+
     from packaging import tags
     from wheel import __version__ as wheel_version
 
