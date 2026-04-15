@@ -347,11 +347,15 @@ QByteArrayList emulatedCompilerOptions()
 
     // Append the c++ include paths since Clang is unable to find
     // <type_traits> etc (g++ 11.3).
-    const HeaderPaths gppPaths = gppInternalIncludePaths(compilerFromCMake(QStringLiteral("g++")));
+    const HeaderPaths gppPaths = gppInternalIncludePaths(QStringLiteral("g++"));
     for (const HeaderPath &h : gppPaths) {
-        if (h.path.contains("c++")
-            || h.path.contains("sysroot")) { // centOS
-            headerPaths.append(h);
+        // PySide2 requires that Qt headers are not -isystem
+        // https://bugreports.qt.io/browse/PYSIDE-787
+        if (!h.path.contains("-qt")) {
+            // add using -isystem
+                 headerPaths.append(h);
+        } else {
+            headerPaths.append({h.path, HeaderType::Standard});
         }
     }
 #else

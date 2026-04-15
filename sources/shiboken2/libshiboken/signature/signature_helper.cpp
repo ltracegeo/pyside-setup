@@ -105,7 +105,8 @@ int add_more_getsets(PyTypeObject *type, PyGetSetDef *gsp, PyObject **doc_descr)
      */
     assert(PyType_Check(type));
     PyType_Ready(type);
-    PyObject *dict = type->tp_dict;
+    AutoDecRef tpDict(PepType_GetDict(type));
+    auto *dict = tpDict.object();
     for (; gsp->name != nullptr; gsp++) {
         PyObject *have_descr = PyDict_GetItemString(dict, gsp->name);
         if (have_descr != nullptr) {
@@ -346,7 +347,8 @@ static int _build_func_to_type(PyObject *obtype)
      * We also check for hidden methods, see below.
      */
     auto *type = reinterpret_cast<PyTypeObject *>(obtype);
-    PyObject *dict = type->tp_dict;
+    AutoDecRef tpDict(PepType_GetDict(type));
+    auto *dict = tpDict.object();
     PyMethodDef *meth = type->tp_methods;
 
     if (meth == nullptr)

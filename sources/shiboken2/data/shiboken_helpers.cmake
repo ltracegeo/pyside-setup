@@ -88,7 +88,7 @@ endmacro()
 macro(set_python_site_packages)
     execute_process(
         COMMAND ${PYTHON_EXECUTABLE} -c "if True:
-            from distutils import sysconfig
+            import setuptools; from distutils import sysconfig
             from os.path import sep
             print(sysconfig.get_python_lib(1, 0, prefix='${CMAKE_INSTALL_PREFIX}').replace(sep, '/'))
             "

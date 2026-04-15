@@ -1,0 +1,179 @@
+name: Build and Release Wheels
+
+on:
+  push:
+    tags:
+      - '*'
+
+jobs:
+  build-linux:
+    runs-on: ubuntu-latest
+    container:
+      image: slicer/slicer-base:latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          submodules: recursive
+
+      - name: Install dependencies
+        run: |
+          dnf -y update
+          dnf -y install epel-release
+          dnf -y groupinstall "Development Tools"
+          dnf -y install \
+            cmake \
+            ninja-build \
+            wget \
+            p7zip \
+            mesa-libGL-devel \
+            libX11-devel \
+            libXext-devel \
+            libXrender-devel \
+            libXrandr-devel \
+            libXcursor-devel \
+            libXinerama-devel \
+            libXi-devel \
+            libXcomposite-devel \
+            libXdamage-devel \
+            libXtst-devel \
+            libxkbcommon-devel \
+            fontconfig-devel \
+            dbus-devel \
+            libxml2-devel \
+            libxslt-devel \
+            openssl-devel \
+            llvm-devel \
+            clang-devel
+
+
+      - name: Install Python requirements
+        run: |
+          python -m pip install -r requirements.txt
+
+      - name: Prepare Version
+        shell: bash
+        run: |
+          VERSION=${{ github.ref_name }}
+          VERSION=${VERSION#v}
+          echo "PYSIDE2_VERSION_OVERRIDE=$VERSION" >> $GITHUB_ENV
+          # Also update the version files for CMake consistency
+          if [[ $VERSION =~ ^([0-9]+)\.([0-9]+)\.([0-9]+) ]]; then
+            MAJOR=${BASH_REMATCH[1]}
+            MINOR=${BASH_REMATCH[2]}
+            PATCH=${BASH_REMATCH[3]}
+            sed -i "s/major_version = .*/major_version = \"$MAJOR\"/" sources/pyside2/pyside_version.py sources/shiboken2/shiboken_version.py
+            sed -i "s/minor_version = .*/minor_version = \"$MINOR\"/" sources/pyside2/pyside_version.py sources/shiboken2/shiboken_version.py
+            sed -i "s/patch_version = .*/patch_version = \"$PATCH\"/" sources/pyside2/pyside_version.py sources/shiboken2/shiboken_version.py
+          fi
+
+      - name: Build Wheels
+        env:
+          LLVM_INSTALL_DIR: /usr
+        run: |
+          python setup.py install \
+              --qmake=/opt/qt/5.15.2/gcc_64/bin/qmake \
+              --parallel=8 \
+              --build-tests \
+              --ignore-git \
+              --build-type=all \
+              --standalone
+          
+          echo "Packaging wheels..."
+          python setup.py bdist_wheel --only-package --standalone --qmake=/opt/qt/5.15.2/gcc_64/bin/qmake
+
+      - name: Upload Artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: linux-wheels
+          path: dist/*.whl
+
+  build-windows:
+    runs-on: windows-2022
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          submodules: recursive
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+
+      - name: Install dependencies
+        run: |
+          python -m pip install aqtinstall
+          mkdir C:\Qt
+          python -m aqt install-qt windows desktop 5.15.2 win64_msvc2019_64 --outputdir C:\Qt
+          python -m aqt install-tool windows desktop tools_libclang_10_0_0 win64_msvc2019_64 --outputdir C:\Qt
+
+      - name: Install requirements
+        run: |
+          python -m pip install -r requirements.txt
+
+      - name: Prepare Version
+        shell: bash
+        run: |
+          VERSION=${{ github.ref_name }}
+          VERSION=${VERSION#v}
+          echo "PYSIDE2_VERSION_OVERRIDE=$VERSION" >> $GITHUB_ENV
+          # Also update the version files for CMake consistency
+          if [[ $VERSION =~ ^([0-9]+)\.([0-9]+)\.([0-9]+) ]]; then
+            MAJOR=${BASH_REMATCH[1]}
+            MINOR=${BASH_REMATCH[2]}
+            PATCH=${BASH_REMATCH[3]}
+            sed -i "s/major_version = .*/major_version = \"$MAJOR\"/" sources/pyside2/pyside_version.py sources/shiboken2/shiboken_version.py
+            sed -i "s/minor_version = .*/minor_version = \"$MINOR\"/" sources/pyside2/pyside_version.py sources/shiboken2/shiboken_version.py
+            sed -i "s/patch_version = .*/patch_version = \"$PATCH\"/" sources/pyside2/pyside_version.py sources/shiboken2/shiboken_version.py
+          fi
+
+      - name: Build Wheels
+        shell: cmd
+        env:
+          LLVM_INSTALL_DIR: C:\Qt\Tools\libclang
+        run: |
+          set PATH=C:\Qt\5.15.2\msvc2019_64\bin;%PATH%
+          python setup.py install ^
+              --qmake=C:\Qt\5.15.2\msvc2019_64\bin\qmake.exe ^
+              --parallel=8 ^
+              --build-tests ^
+              --ignore-git ^
+              --build-type=all ^
+              --standalone
+          
+          echo "Packaging wheels..."
+          python setup.py bdist_wheel --only-package --standalone --qmake=C:\Qt\5.15.2\msvc2019_64\bin\qmake.exe
+
+      - name: Upload Artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: windows-wheels
+          path: dist/*.whl
+
+  release:
+    needs: [build-linux, build-windows]
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - name: Download Linux wheels
+        uses: actions/download-artifact@v4
+        with:
+          name: linux-wheels
+          path: dist
+
+      - name: Download Windows wheels
+        uses: actions/download-artifact@v4
+        with:
+          name: windows-wheels
+          path: dist
+
+      - name: Create Release
+        uses: softprops/action-gh-release@v2
+        with:
+          files: dist/*.whl
+          tag_name: ${{ github.ref_name }}
+          name: Release ${{ github.ref_name }}
+          draft: false
+          prerelease: false

@@ -236,7 +236,6 @@ struct List {
     const AbstractMetaFunction *erase = list->findFunction(QStringLiteral("erase"));
     QVERIFY(erase);
     QCOMPARE(erase->arguments().size(), 1);
-    QEXPECT_FAIL("", "Clang: Some other code changes the parameter type", Abort);
     QCOMPARE(erase->arguments().at(0)->type()->cppSignature(), QLatin1String("List::Iterator"));
 }
 
@@ -389,7 +388,7 @@ typedef BaseTemplateClass<TypeOne> TypeOneClass;
     const ComplexTypeEntry* oneType = one->typeEntry();
     const ComplexTypeEntry* baseType = base->typeEntry();
     QCOMPARE(oneType->baseContainerType(), baseType);
-    QCOMPARE(one->baseClassNames(), QStringList(QLatin1String("BaseTemplateClass<TypeOne>")));
+    QCOMPARE(one->baseClassNames(), QStringList(QLatin1String("NSpace::BaseTemplateClass<NSpace::TypeOne>")));
 
     QVERIFY(one->hasTemplateBaseClassInstantiations());
     AbstractMetaTypeList instantiations = one->templateBaseClassInstantiations();

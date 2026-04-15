@@ -1,0 +1,63 @@
+# Linux Dockerfile (AlmaLinux 8) for PySide2 build
+FROM slicer/slicer-base:latest
+
+# Install base dependencies
+RUN dnf -y update && \
+    dnf -y install epel-release && \
+    dnf -y groupinstall "Development Tools" && \
+    dnf -y install \
+    cmake \
+    ninja-build \
+    wget \
+    p7zip \
+    mesa-libGL-devel \
+    libX11-devel \
+    libXext-devel \
+    libXrender-devel \
+    libXrandr-devel \
+    libXcursor-devel \
+    libXinerama-devel \
+    libXi-devel \
+    libXcomposite-devel \
+    libXdamage-devel \
+    libXtst-devel \
+    libxkbcommon-devel \
+    fontconfig-devel \
+    dbus-devel \
+    libxml2-devel \
+    libxslt-devel \
+    openssl-devel \
+    llvm-devel \
+    clang-devel \
+    && dnf clean all
+
+# # Install Python 3.12
+# RUN dnf -y install python3.12 python3.12-devel python3.12-pip && \
+#     dnf clean all
+
+# # Ensure python3.12 is the default python
+# RUN alternatives --install /usr/bin/python python /usr/bin/python3.12 1 && \
+#     alternatives --install /usr/bin/python3 python3 /usr/bin/python3.12 1
+
+# # Install aqtinstall to install Qt
+# RUN python -m pip install aqtinstall
+
+# # Install Qt 5.15.2
+# # The user specified path: /opt/qt/5.15.2/gcc_64/bin/qmake
+# RUN mkdir -p /opt/qt && \
+#     aqt install-qt linux desktop 5.15.2 gcc_64 --outputdir /opt/qt
+
+# # Set environment variables
+# ENV PATH="/opt/Qt/5.15.2/gcc_64/bin:${PATH}"
+# LLVM_INSTALL_DIR is needed for shiboken2
+ENV LLVM_INSTALL_DIR=/usr
+
+# Set working directory
+WORKDIR /app
+
+COPY requirements.txt /app/requirements.txt
+
+RUN python -m pip install -r requirements.txt
+
+# The command to build will be run in the bash script, but we can set a default CMD
+CMD ["/bin/bash"]

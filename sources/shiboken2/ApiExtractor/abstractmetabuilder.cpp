@@ -1845,7 +1845,10 @@ AbstractMetaFunction *AbstractMetaBuilderPrivate::traverseFunction(const Functio
             return nullptr;
         }
 
-        AbstractMetaType *type = translateType(returnType, currentClass, {}, &errorMessage);
+        TranslateTypeFlags flags;
+        if (functionItem->scopeResolution())
+            flags.setFlag(AbstractMetaBuilder::NoClassScopeLookup);
+        AbstractMetaType *type = translateType(returnType, currentClass, flags, &errorMessage);
         if (!type) {
             const QString reason = msgUnmatchedReturnType(functionItem, errorMessage);
             qCWarning(lcShiboken, "%s",
@@ -1880,7 +1883,10 @@ AbstractMetaFunction *AbstractMetaBuilderPrivate::traverseFunction(const Functio
             return nullptr;
         }
 
-        AbstractMetaType *metaType = translateType(arg->type(), currentClass, {}, &errorMessage);
+        TranslateTypeFlags flags;
+        if (arg->scopeResolution())
+            flags.setFlag(AbstractMetaBuilder::NoClassScopeLookup);
+        AbstractMetaType *metaType = translateType(arg->type(), currentClass, flags, &errorMessage);
         if (!metaType) {
             // If an invalid argument has a default value, simply remove it
             // unless the function is virtual (since the override in the
@@ -2073,11 +2079,13 @@ static const TypeEntry* findTypeEntryUsingContext(const AbstractMetaClass* metaC
 // Helper for translateTypeStatic()
 TypeEntries AbstractMetaBuilderPrivate::findTypeEntries(const QString &qualifiedName,
                                                         const QString &name,
+                                                        TranslateTypeFlags flags,
                                                         AbstractMetaClass *currentClass,
                                                         AbstractMetaBuilderPrivate *d)
 {
     // 5.1 - Try first using the current scope
-    if (currentClass) {
+    if (currentClass != nullptr
+        && !flags.testFlag(AbstractMetaBuilder::NoClassScopeLookup)) {
         if (auto type = findTypeEntryUsingContext(currentClass, qualifiedName))
             return {type};
 
@@ -2142,6 +2150,13 @@ static bool isNumber(const QString &s)
 {
     return std::all_of(s.cbegin(), s.cend(),
                        [](QChar c) { return c.isDigit(); });
+}
+
+// A type entry relevant only for non type template "X<5>"
+static bool isNonTypeTemplateArgument(const TypeEntryCPtr &te)
+{
+    const auto type = te->type();
+    return type == TypeEntry::EnumValue || type == TypeEntry::ConstantValueType;
 }
 
 AbstractMetaType *AbstractMetaBuilderPrivate::translateTypeStatic(const TypeInfo &_typei,
@@ -2271,7 +2286,15 @@ AbstractMetaType *AbstractMetaBuilderPrivate::translateTypeStatic(const TypeInfo
         typeInfo.clearInstantiations();
     }
 
-    const TypeEntries types = findTypeEntries(qualifiedName, name, currentClass, d);
+    TypeEntries types = findTypeEntries(qualifiedName, name, flags, currentClass, d);
+    if (!flags.testFlag(AbstractMetaBuilder::TemplateArgument)) {
+        // Avoid clashes between QByteArray and enum value QMetaType::QByteArray
+        // unless we are looking for template arguments.
+        auto end = std::remove_if(types.begin(), types.end(),
+                                  isNonTypeTemplateArgument);
+        types.erase(end, types.end());
+    }
+
     if (types.isEmpty()) {
         if (errorMessageIn) {
             *errorMessageIn =
@@ -2293,7 +2316,9 @@ AbstractMetaType *AbstractMetaBuilderPrivate::translateTypeStatic(const TypeInfo
     const auto &templateArguments = typeInfo.instantiations();
     for (int t = 0, size = templateArguments.size(); t < size; ++t) {
         const  TypeInfo &ti = templateArguments.at(t);
-        AbstractMetaType *targType = translateTypeStatic(ti, currentClass, d, flags, &errorMessage);
+        AbstractMetaType *targType = translateTypeStatic(ti, currentClass, d,
+                                                         flags | AbstractMetaBuilder::TemplateArgument,
+                                                         &errorMessage);
         // For non-type template parameters, create a dummy type entry on the fly
         // as is done for classes.
         if (!targType) {

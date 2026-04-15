@@ -899,21 +899,23 @@ QString Generator::translateType(const AbstractMetaType *cType,
                 if (index >= (s.size() - (constLen + 1))) // (VarType const)  or (VarType const[*|&])
                     s = s.remove(index, constLen);
             }
-        } else if (options & Generator::ExcludeConst || options & Generator::ExcludeReference) {
-            AbstractMetaType *copyType = cType->copy();
-
-            if (options & Generator::ExcludeConst)
-                copyType->setConstant(false);
-
-            if (options & Generator::ExcludeReference)
-                copyType->setReferenceType(NoReference);
-
-            s = copyType->cppSignature();
-            if (!copyType->typeEntry()->isVoid() && !copyType->typeEntry()->isCppPrimitive())
-                s.prepend(QLatin1String("::"));
-            delete copyType;
         } else {
-            s = cType->cppSignature();
+            AbstractMetaType *copyType = cType->copy();
+            if (options & Generator::ExcludeConst || options & Generator::ExcludeReference) {
+                if (options & Generator::ExcludeConst)
+                    copyType->setConstant(false);
+
+                if (options & Generator::ExcludeReference)
+                    copyType->setReferenceType(NoReference);
+            }
+            s = copyType->cppSignature();
+            const auto te = copyType->typeEntry();
+            if (!te->isVoid() && !te->isCppPrimitive()) { // Add scope resolution
+                const auto pos = s.indexOf(te->qualifiedCppName()); // Skip const/volatile
+                Q_ASSERT(pos >= 0);
+                s.insert(pos, QLatin1String("::"));
+            }
+            delete copyType;
         }
     }
 

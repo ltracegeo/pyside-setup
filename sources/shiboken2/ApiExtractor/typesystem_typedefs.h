@@ -48,6 +48,7 @@ using CodeSnipList = QVector<CodeSnip>;
 using DocModificationList = QVector<DocModification>;
 using FieldModificationList = QVector<FieldModification>;
 using FunctionModificationList = QVector<FunctionModification>;
+using TypeEntryCPtr = const TypeEntry *;
 using TypeEntries = QVector<const TypeEntry *>;
 
 #endif // TYPESYSTEM_TYPEDEFS_H

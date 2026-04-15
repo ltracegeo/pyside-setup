@@ -1,0 +1,50 @@
+# Windows Dockerfile (Windows Server 2019) for PySide2 build
+FROM mcr.microsoft.com/windows/servercore:ltsc2019
+
+SHELL ["powershell", "-Command", "$ErrorActionPreference = 'Stop'; $ProgressPreference = 'SilentlyContinue';"]
+
+# Install Python 3.12
+RUN Invoke-WebRequest -Uri "https://www.python.org/ftp/python/3.12.3/python-3.12.3-amd64.exe" -OutFile "python-installer.exe"; \
+    Start-Process -FilePath "python-installer.exe" -ArgumentList "/quiet InstallAllUsers=1 PrependPath=1" -Wait; \
+    Remove-Item "python-installer.exe"
+
+# Install CMake
+RUN Invoke-WebRequest -Uri "https://github.com/Kitware/CMake/releases/download/v3.29.2/cmake-3.29.2-windows-x86_64.msi" -OutFile "cmake-installer.msi"; \
+    Start-Process -FilePath "msiexec.exe" -ArgumentList "/i cmake-installer.msi /quiet /qn /norestart" -Wait; \
+    Remove-Item "cmake-installer.msi"
+
+# Install Ninja
+RUN Invoke-WebRequest -Uri "https://github.com/ninja-build/ninja/releases/download/v1.12.1/ninja-win.zip" -OutFile "ninja.zip"; \
+    Expand-Archive -Path "ninja.zip" -DestinationPath "C:\Ninja"; \
+    Remove-Item "ninja.zip"; \
+    $env:PATH += ";C:\Ninja"; \
+    [Environment]::SetEnvironmentVariable('PATH', $env:PATH + ';C:\Ninja', [EnvironmentVariableTarget]::Machine)
+
+# Install MSVC Build Tools 2019
+RUN Invoke-WebRequest -Uri "https://aka.ms/vs/16/release/vs_buildtools.exe" -OutFile "vs_buildtools.exe"; \
+    Start-Process -FilePath "vs_buildtools.exe" -ArgumentList "--quiet --wait --norestart --nocache --add Microsoft.VisualStudio.Workload.VCTools --includeRecommended" -Wait; \
+    Remove-Item "vs_buildtools.exe"
+
+# Install 7-Zip (needed for aqtinstall)
+RUN Invoke-WebRequest -Uri "https://www.7-zip.org/a/7z2404-x64.msi" -OutFile "7z.msi"; \
+    Start-Process -FilePath "msiexec.exe" -ArgumentList "/i 7z.msi /quiet /qn /norestart" -Wait; \
+    Remove-Item "7z.msi"
+
+# Install aqtinstall to install Qt
+RUN pip install aqtinstall
+
+# Install Qt 5.15.2
+RUN mkdir C:\Qt; \
+    aqt install-qt windows desktop 5.15.2 win64_msvc2019_64 --outputdir C:\Qt
+
+# Install libclang (needed for shiboken)
+RUN aqt install-tool windows desktop tools_libclang_10_0_0 win64_msvc2019_64 --outputdir C:\Qt
+ENV LLVM_INSTALL_DIR="C:\Qt\Tools\libclang"
+
+# Update PATH
+RUN $env:PATH = 'C:\Qt\5.15.2\msvc2019_64\bin;C:\Program Files\CMake\bin;C:\Ninja;C:\Program Files\Python312;C:\Program Files\Python312\Scripts;' + $env:PATH; \
+    [Environment]::SetEnvironmentVariable('PATH', $env:PATH, [EnvironmentVariableTarget]::Machine)
+
+WORKDIR C:\app
+
+CMD ["powershell"]

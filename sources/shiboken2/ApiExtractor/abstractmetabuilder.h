@@ -93,7 +93,9 @@ public:
     void setSkipDeprecated(bool value);
 
     enum TranslateTypeFlag {
-        DontResolveType = 0x1
+        DontResolveType = 0x1,
+        TemplateArgument = 0x2,
+        NoClassScopeLookup = 0x4
     };
     Q_DECLARE_FLAGS(TranslateTypeFlags, TranslateTypeFlag);
 

@@ -42,10 +42,10 @@ from __future__ import print_function
 import os
 import time
 
-from distutils.errors import DistutilsSetupError
-from distutils.sysconfig import get_config_var
-from distutils.util import get_platform
-from distutils.version import LooseVersion
+import setuptools; from distutils.errors import DistutilsSetupError
+import setuptools; from distutils.sysconfig import get_config_var
+import setuptools; from distutils.util import get_platform
+import setuptools; from distutils.version import LooseVersion
 
 from .options import OPTION
 from .qtinfo import QtInfo
@@ -79,6 +79,8 @@ def get_qt_version():
 @memoize
 def get_package_version():
     """ Returns the version string for the PySide2 package. """
+    if "PYSIDE2_VERSION_OVERRIDE" in os.environ:
+        return os.environ["PYSIDE2_VERSION_OVERRIDE"]
     setup_script_dir = os.getcwd()
     pyside_version_py = os.path.join(
         setup_script_dir, "sources", "pyside2", "pyside_version.py")
