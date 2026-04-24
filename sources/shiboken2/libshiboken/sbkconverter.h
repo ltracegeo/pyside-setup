@@ -250,7 +250,7 @@ LIBSHIBOKEN_API PythonToCppFunc isPythonToCppConvertible(const SbkArrayConverter
  *  It differs from Shiboken::Object::cppPointer because it casts the pointer to a proper
  *  memory offset depending on the desired type.
  */
-LIBSHIBOKEN_API void *cppPointer(PyTypeObject *desiredType, SbkObject *pyIn);
+LIBSHIBOKEN_API void *cppPointer(void *desiredType, SbkObject *pyIn);
 
 /// Converts a Python object \p pyIn to C++ and stores the result in the C++ pointer passed in \p cppOut.
 LIBSHIBOKEN_API void pythonToCppPointer(SbkObjectType *type, PyObject *pyIn, void *cppOut);

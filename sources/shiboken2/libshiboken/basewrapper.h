@@ -385,7 +385,7 @@ LIBSHIBOKEN_API void releaseOwnership(SbkObject *pyObj);
 /**
  *   Get the C++ pointer of type \p desiredType from a Python object.
  */
-LIBSHIBOKEN_API void *cppPointer(SbkObject *pyObj, PyTypeObject *desiredType);
+LIBSHIBOKEN_API void *cppPointer(SbkObject *pyObj, void *desiredType);
 
 /**
  *   Return a list with all C++ pointers held from a Python object.
@@ -396,7 +396,7 @@ LIBSHIBOKEN_API std::vector<void *>cppPointers(SbkObject *pyObj);
 /**
  *   Set the C++ pointer of type \p desiredType of a Python object.
  */
-LIBSHIBOKEN_API bool setCppPointer(SbkObject *sbkObj, PyTypeObject *desiredType, void *cptr);
+LIBSHIBOKEN_API bool setCppPointer(SbkObject *sbkObj, void *desiredType, void *cptr);
 
 /**
  * Returns false and sets a Python RuntimeError if the Python wrapper is not marked as valid.

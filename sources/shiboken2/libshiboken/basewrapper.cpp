@@ -1494,12 +1494,12 @@ void makeValid(SbkObject *self)
     }
 }
 
-void *cppPointer(SbkObject *pyObj, PyTypeObject *desiredType)
+void *cppPointer(SbkObject *pyObj, void *desiredType)
 {
     PyTypeObject *type = Py_TYPE(pyObj);
     int idx = 0;
     if (PepType_SOTP(reinterpret_cast<SbkObjectType *>(type))->is_multicpp)
-        idx = getTypeIndexOnHierarchy(type, desiredType);
+        idx = getTypeIndexOnHierarchy(type, reinterpret_cast<PyTypeObject *>(desiredType));
     if (pyObj->d->cptr)
         return pyObj->d->cptr[idx];
     return nullptr;
@@ -1515,12 +1515,12 @@ std::vector<void *> cppPointers(SbkObject *pyObj)
 }
 
 
-bool setCppPointer(SbkObject *sbkObj, PyTypeObject *desiredType, void *cptr)
+LIBSHIBOKEN_API bool setCppPointer(SbkObject *sbkObj, void *desiredType, void *cptr)
 {
     int idx = 0;
     PyTypeObject *type = Py_TYPE(sbkObj);
     if (PepType_SOTP(type)->is_multicpp)
-        idx = getTypeIndexOnHierarchy(type, desiredType);
+        idx = getTypeIndexOnHierarchy(type, reinterpret_cast<PyTypeObject *>(desiredType));
 
     const bool alreadyInitialized = sbkObj->d->cptr[idx] != nullptr;
     if (alreadyInitialized)
@@ -1532,7 +1532,7 @@ bool setCppPointer(SbkObject *sbkObj, PyTypeObject *desiredType, void *cptr)
     return !alreadyInitialized;
 }
 
-bool isValid(PyObject *pyObj)
+LIBSHIBOKEN_API bool isValid(PyObject *pyObj)
 {
     if (!pyObj || pyObj == Py_None
         || PyType_Check(pyObj) != 0
@@ -1557,7 +1557,7 @@ bool isValid(PyObject *pyObj)
     return true;
 }
 
-bool isValid(SbkObject *pyObj, bool throwPyError)
+LIBSHIBOKEN_API bool isValid(SbkObject *pyObj, bool throwPyError)
 {
     if (!pyObj)
         return false;
@@ -1580,7 +1580,7 @@ bool isValid(SbkObject *pyObj, bool throwPyError)
     return true;
 }
 
-bool isValid(PyObject *pyObj, bool throwPyError)
+LIBSHIBOKEN_API bool isValid(PyObject *pyObj, bool throwPyError)
 {
     if (!pyObj || pyObj == Py_None ||
         !PyType_IsSubtype(Py_TYPE(pyObj), reinterpret_cast<PyTypeObject *>(SbkObject_TypeF()))) {

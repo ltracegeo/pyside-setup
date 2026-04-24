@@ -100,6 +100,7 @@ set_target_properties(pyside2 PROPERTIES
                       VERSION ${BINDING_API_VERSION}
                       SOVERSION "${PYSIDE_SO_VERSION}"
                       OUTPUT_NAME "pyside2${pyside2_SUFFIX}${SHIBOKEN_PYTHON_SHARED_LIBRARY_SUFFIX}"
+                      RUNTIME_OUTPUT_DIRECTORY_RELEASE "../PySide2"
                       DEFINE_SYMBOL BUILD_LIBPYSIDE)
 
 if(${QT_MAJOR_VERSION} GREATER_EQUAL 6)
