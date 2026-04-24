@@ -205,6 +205,7 @@ class DistUtilsCommandMixin(object):
         ('verbose-build', None, 'Verbose build'),
         ('sanitize-address', None, 'Build with address sanitizer'),
         ('shorter-paths', None, 'Use shorter paths'),
+        ('no-pyi', None, 'Do not generate .pyi files'),
         ('doc-build-online', None, 'Build online documentation'),
         ('qmake=', None, 'Path to qmake'),
         ('qt=', None, 'Qt version'),
@@ -240,6 +241,7 @@ class DistUtilsCommandMixin(object):
         self.sanitize_address = False
         self.snapshot_build = False
         self.shorter_paths = False
+        self.no_pyi = False
         self.doc_build_online = False
         self.qmake = None
         self.qt = '5'
@@ -286,6 +288,7 @@ class DistUtilsCommandMixin(object):
             log.set_verbosity(1)
         OPTION['SANITIZE_ADDRESS'] = self.sanitize_address
         OPTION['SHORTER_PATHS'] = self.shorter_paths
+        OPTION['NO_PYI'] = self.no_pyi
         OPTION['DOC_BUILD_ONLINE'] = self.doc_build_online
         # make qtinfo.py independent of relative paths.
         qmake_abs_path = os.path.abspath(self.qmake)

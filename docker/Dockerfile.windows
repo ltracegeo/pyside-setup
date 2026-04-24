@@ -1,50 +1,48 @@
 # Windows Dockerfile (Windows Server 2019) for PySide2 build
-FROM mcr.microsoft.com/windows/servercore:ltsc2019
+ARG REPO=mcr.microsoft.com/dotnet/framework/runtime
+FROM $REPO:4.8-20230808-windowsservercore-ltsc2019
 
 SHELL ["powershell", "-Command", "$ErrorActionPreference = 'Stop'; $ProgressPreference = 'SilentlyContinue';"]
 
-# Install Python 3.12
-RUN Invoke-WebRequest -Uri "https://www.python.org/ftp/python/3.12.3/python-3.12.3-amd64.exe" -OutFile "python-installer.exe"; \
-    Start-Process -FilePath "python-installer.exe" -ArgumentList "/quiet InstallAllUsers=1 PrependPath=1" -Wait; \
-    Remove-Item "python-installer.exe"
+# Install Qt
+ARG QT_EMAIL
+ARG QT_PASSWORD
+RUN $exePath = "$env:TEMP + '\qt-unified-windows-x64-4.4.1-online.exe'" ; \ 
+    curl.exe -L 'https://download.qt.io/archive/online_installers/4.4/qt-unified-windows-x64-4.4.1-online.exe' --output "$exePath" ; \
+    cmd /C "$exePath" install qt.qt5.5152.qtwebengine qt.qt5.5152.qtscript qt.qt5.5152.win64_msvc2019_64 \ 
+        qt.qt5.5152.qtwebglplugin.win64_msvc2019_64 qt.qt5.5152.qtwebengine.win64_msvc2019_64 qt.qt5.5152.qtvirtualkeyboard.win64_msvc2019_64 \
+        qt.qt5.5152.qtscript.win64_msvc2019_64 qt.qt5.5152.qtquicktimeline.win64_msvc2019_64 qt.qt5.5152.qtquick3d.win64_msvc2019_64 \
+        qt.qt5.5152.qtpurchasing.win64_msvc2019_64 qt.qt5.5152.qtnetworkauth.win64_msvc2019_64 qt.qt5.5152.qtlottie.win64_msvc2019_64 \
+        qt.qt5.5152.qtdatavis3d.win64_msvc2019_64 qt.qt5.5152.qtcharts.win64_msvc2019_64 qt.qt5.5152.debug_info.win64_msvc2019_64 \
+        --root C:\Qt --auto-answer telemetry-question=No,AssociateCommonFiletypes=Yes --accept-licenses --accept-obligations \ 
+        --email "$env:QT_EMAIL" --pw "$env:QT_PASSWORD" --confirm-command --accept-messages --filter-packages "DisplayName=Qt 5.15.2"
 
-# Install CMake
-RUN Invoke-WebRequest -Uri "https://github.com/Kitware/CMake/releases/download/v3.29.2/cmake-3.29.2-windows-x86_64.msi" -OutFile "cmake-installer.msi"; \
-    Start-Process -FilePath "msiexec.exe" -ArgumentList "/i cmake-installer.msi /quiet /qn /norestart" -Wait; \
-    Remove-Item "cmake-installer.msi"
 
-# Install Ninja
-RUN Invoke-WebRequest -Uri "https://github.com/ninja-build/ninja/releases/download/v1.12.1/ninja-win.zip" -OutFile "ninja.zip"; \
-    Expand-Archive -Path "ninja.zip" -DestinationPath "C:\Ninja"; \
-    Remove-Item "ninja.zip"; \
-    $env:PATH += ";C:\Ninja"; \
-    [Environment]::SetEnvironmentVariable('PATH', $env:PATH + ';C:\Ninja', [EnvironmentVariableTarget]::Machine)
+# Install Chocolatey
+RUN Set-ExecutionPolicy Bypass -Scope Process -Force; \
+    [System.Net.ServicePointManager]::SecurityProtocol = [System.Net.ServicePointManager]::SecurityProtocol -bor 3072; \
+    iex ((New-Object System.Net.WebClient).DownloadString('https://community.chocolatey.org/install.ps1'))
 
-# Install MSVC Build Tools 2019
-RUN Invoke-WebRequest -Uri "https://aka.ms/vs/16/release/vs_buildtools.exe" -OutFile "vs_buildtools.exe"; \
-    Start-Process -FilePath "vs_buildtools.exe" -ArgumentList "--quiet --wait --norestart --nocache --add Microsoft.VisualStudio.Workload.VCTools --includeRecommended" -Wait; \
-    Remove-Item "vs_buildtools.exe"
+# Install Python 3.12, CMake, Ninja, and 7-Zip via Chocolatey
+RUN choco install -y python --version 3.12.3; \
+    choco install -y cmake --version=3.31.11 --installargs 'ADD_CMAKE_TO_PATH=System'; \
+    choco install -y ninja; \
+    choco install -y git; \
+    choco install -y 7zip; \
+    choco install -y llvm --version 14.0.6
 
-# Install 7-Zip (needed for aqtinstall)
-RUN Invoke-WebRequest -Uri "https://www.7-zip.org/a/7z2404-x64.msi" -OutFile "7z.msi"; \
-    Start-Process -FilePath "msiexec.exe" -ArgumentList "/i 7z.msi /quiet /qn /norestart" -Wait; \
-    Remove-Item "7z.msi"
+# Install MSVC Build Tools 2019 via Chocolatey
+RUN choco install -y visualstudio2019buildtools --version 16.11.3; \
+    choco install -y visualstudio2019-workload-vctools --version 1.0.1
 
-# Install aqtinstall to install Qt
-RUN pip install aqtinstall
+# Set Environment Variables
+ENV CLANG_INSTALL_DIR="C:\Program Files\LLVM"
+RUN [Environment]::SetEnvironmentVariable('PATH', 'C:\Qt\5.15.2\msvc2019_64\bin;C:\Program Files\LLVM\bin;C:\Program Files\CMake\bin;C:\Python312;C:\Python312\Scripts;' + $env:PATH, [EnvironmentVariableTarget]::Machine)
 
-# Install Qt 5.15.2
-RUN mkdir C:\Qt; \
-    aqt install-qt windows desktop 5.15.2 win64_msvc2019_64 --outputdir C:\Qt
+WORKDIR C:/app
 
-# Install libclang (needed for shiboken)
-RUN aqt install-tool windows desktop tools_libclang_10_0_0 win64_msvc2019_64 --outputdir C:\Qt
-ENV LLVM_INSTALL_DIR="C:\Qt\Tools\libclang"
+COPY requirements.txt .
+RUN python -m pip install -r requirements.txt
 
-# Update PATH
-RUN $env:PATH = 'C:\Qt\5.15.2\msvc2019_64\bin;C:\Program Files\CMake\bin;C:\Ninja;C:\Program Files\Python312;C:\Program Files\Python312\Scripts;' + $env:PATH; \
-    [Environment]::SetEnvironmentVariable('PATH', $env:PATH, [EnvironmentVariableTarget]::Machine)
-
-WORKDIR C:\app
-
+RUN git config --global --add safe.directory '*'
 CMD ["powershell"]

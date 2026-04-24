@@ -167,7 +167,7 @@ macro(create_pyside_module)
     if (WIN32)
         set(ld_prefix_var_name "PATH")
     elseif(APPLE)
-        set(ld_prefix_var_name "DYLD_LIBRARY_PATH")
+        set(ld_prefix_var_name "DYLD_FALLBACK_LIBRARY_PATH")
     else()
         set(ld_prefix_var_name "LD_LIBRARY_PATH")
     endif()
@@ -196,26 +196,33 @@ macro(create_pyside_module)
             string(APPEND ld_prefix ":${env_value}")
         endif()
     endif()
+    if(WIN32)
+        set(python_site_packages_rel "Lib/site-packages")
+    else()
+        set(python_site_packages_rel "lib/python$ENV{PY_VER}/site-packages")
+    endif()
     set(generate_pyi_options ${module_NAME} --sys-path
-        "${pysidebindings_BINARY_DIR}"
-        "${SHIBOKEN_PYTHON_MODULE_DIR}")
+        "$ENV{BUILD_PREFIX}/${python_site_packages_rel}")
     if (QUIET_BUILD)
         list(APPEND generate_pyi_options "--quiet")
     endif()
 
-    # Add target to generate pyi file, which depends on the module target.
-    add_custom_target("${module_NAME}_pyi" ALL
-                      COMMAND ${CMAKE_COMMAND} -E env ${ld_prefix}
-                      "${SHIBOKEN_PYTHON_INTERPRETER}"
-                      "${CMAKE_CURRENT_SOURCE_DIR}/../support/generate_pyi.py" ${generate_pyi_options})
-    add_dependencies("${module_NAME}_pyi" ${module_NAME})
+    if (NOT NO_PYI)
+        # Add target to generate pyi file, which depends on the module target.
+        add_custom_target("${module_NAME}_pyi" ALL
+                          COMMAND ${CMAKE_COMMAND} -E env ${ld_prefix}
+                          "${SHIBOKEN_PYTHON_INTERPRETER}"
+                          "${CMAKE_CURRENT_SOURCE_DIR}/../support/generate_pyi.py" ${generate_pyi_options})
+        add_dependencies("${module_NAME}_pyi" ${module_NAME})
+    endif()
 
     # install
     install(TARGETS ${module_NAME} LIBRARY DESTINATION "${PYTHON_SITE_PACKAGES}/PySide2")
 
-    file(GLOB hinting_stub_files RELATIVE "${CMAKE_CURRENT_BINARY_DIR}/PySide2" "${CMAKE_CURRENT_BINARY_DIR}/PySide2/*.pyi")
-    install(FILES ${hinting_stub_files}
-            DESTINATION "${PYTHON_SITE_PACKAGES}/PySide2")
+    if (NOT NO_PYI)
+        install(FILES "${CMAKE_CURRENT_BINARY_DIR}/../${module_NAME}.pyi"
+	        DESTINATION "${PYTHON_SITE_PACKAGES}/PySide2" OPTIONAL)
+    endif()
 
     install(FILES ${CMAKE_CURRENT_BINARY_DIR}/PySide2/${module_NAME}/pyside2_${lower_module_name}_python.h
             DESTINATION include/PySide2${pyside2_SUFFIX}/${module_NAME}/)
@@ -250,4 +257,3 @@ macro(HAS_QT_MODULE var name)
         set("end_${name}" "-->" PARENT_SCOPE)
     endif()
 endmacro()
-

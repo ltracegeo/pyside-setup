@@ -290,14 +290,15 @@ void nonePythonToCppNullPtr(PyObject *, void *cppOut)
     *static_cast<void **>(cppOut) = nullptr;
 }
 
-void *cppPointer(PyTypeObject *desiredType, SbkObject *pyIn)
+void *cppPointer(void *desiredType, SbkObject *pyIn)
 {
     assert(pyIn);
-    if (!ObjectType::checkType(desiredType))
+    auto *desiredTypePtr = reinterpret_cast<PyTypeObject *>(desiredType);
+    if (!ObjectType::checkType(desiredTypePtr))
         return pyIn;
     auto *inType = reinterpret_cast<SbkObjectType *>(Py_TYPE(pyIn));
     if (ObjectType::hasCast(inType))
-        return ObjectType::cast(inType, pyIn, desiredType);
+        return ObjectType::cast(inType, pyIn, desiredTypePtr);
     return Object::cppPointer(pyIn, desiredType);
 }
 

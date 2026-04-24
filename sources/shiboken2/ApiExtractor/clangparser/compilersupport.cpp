@@ -293,13 +293,7 @@ static QString findClangBuiltInIncludesDir()
 #if defined(Q_CC_CLANG) || defined(Q_CC_GNU)
 static QString compilerFromCMake(const QString &defaultCompiler)
 {
-// Added !defined(Q_OS_DARWIN) due to PYSIDE-1032
-#  if defined(CMAKE_CXX_COMPILER) && !defined(Q_OS_DARWIN)
-    Q_UNUSED(defaultCompiler)
-    return QString::fromLocal8Bit(CMAKE_CXX_COMPILER);
-#  else
-    return defaultCompiler;
-#  endif
+    return qEnvironmentVariable("CXX", defaultCompiler);
 }
 #endif // Q_CC_CLANG, Q_CC_GNU
 

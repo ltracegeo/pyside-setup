@@ -6,87 +6,88 @@ on:
       - '*'
 
 jobs:
-  build-linux:
-    runs-on: ubuntu-latest
-    container:
-      image: slicer/slicer-base:latest
-    steps:
-      - name: Checkout
-        uses: actions/checkout@v4
-        with:
-          submodules: recursive
+  # build-linux:
+  #   runs-on: ubuntu-latest
+  #   container:
+  #     image: slicer/slicer-base:latest
+  #   steps:
+  #     - name: Checkout
+  #       uses: actions/checkout@v4
+  #       with:
+  #         submodules: recursive
 
-      - name: Install dependencies
-        run: |
-          dnf -y update
-          dnf -y install epel-release
-          dnf -y groupinstall "Development Tools"
-          dnf -y install \
-            cmake \
-            ninja-build \
-            wget \
-            p7zip \
-            mesa-libGL-devel \
-            libX11-devel \
-            libXext-devel \
-            libXrender-devel \
-            libXrandr-devel \
-            libXcursor-devel \
-            libXinerama-devel \
-            libXi-devel \
-            libXcomposite-devel \
-            libXdamage-devel \
-            libXtst-devel \
-            libxkbcommon-devel \
-            fontconfig-devel \
-            dbus-devel \
-            libxml2-devel \
-            libxslt-devel \
-            openssl-devel \
-            llvm-devel \
-            clang-devel
+  #     - name: Install dependencies
+  #       run: |
+  #         dnf -y update
+  #         dnf -y install epel-release
+  #         dnf -y groupinstall "Development Tools"
+  #         dnf -y install \
+  #           cmake \
+  #           ninja-build \
+  #           wget \
+  #           p7zip \
+  #           mesa-libGL-devel \
+  #           libX11-devel \
+  #           libXext-devel \
+  #           libXrender-devel \
+  #           libXrandr-devel \
+  #           libXcursor-devel \
+  #           libXinerama-devel \
+  #           libXi-devel \
+  #           libXcomposite-devel \
+  #           libXdamage-devel \
+  #           libXtst-devel \
+  #           libxkbcommon-devel \
+  #           fontconfig-devel \
+  #           dbus-devel \
+  #           libxml2-devel \
+  #           libxslt-devel \
+  #           openssl-devel \
+  #           llvm-devel \
+  #           clang-devel
 
 
-      - name: Install Python requirements
-        run: |
-          python -m pip install -r requirements.txt
+  #     - name: Install Python requirements
+  #       run: |
+  #         python -m pip install -r requirements.txt
 
-      - name: Prepare Version
-        shell: bash
-        run: |
-          VERSION=${{ github.ref_name }}
-          VERSION=${VERSION#v}
-          echo "PYSIDE2_VERSION_OVERRIDE=$VERSION" >> $GITHUB_ENV
-          # Also update the version files for CMake consistency
-          if [[ $VERSION =~ ^([0-9]+)\.([0-9]+)\.([0-9]+) ]]; then
-            MAJOR=${BASH_REMATCH[1]}
-            MINOR=${BASH_REMATCH[2]}
-            PATCH=${BASH_REMATCH[3]}
-            sed -i "s/major_version = .*/major_version = \"$MAJOR\"/" sources/pyside2/pyside_version.py sources/shiboken2/shiboken_version.py
-            sed -i "s/minor_version = .*/minor_version = \"$MINOR\"/" sources/pyside2/pyside_version.py sources/shiboken2/shiboken_version.py
-            sed -i "s/patch_version = .*/patch_version = \"$PATCH\"/" sources/pyside2/pyside_version.py sources/shiboken2/shiboken_version.py
-          fi
+  #     - name: Prepare Version
+  #       shell: bash
+  #       run: |
+  #         VERSION=${{ github.ref_name }}
+  #         VERSION=${VERSION#v}
+  #         echo "PYSIDE2_VERSION_OVERRIDE=$VERSION" >> $GITHUB_ENV
+  #         # Also update the version files for CMake consistency
+  #         if [[ $VERSION =~ ^([0-9]+)\.([0-9]+)\.([0-9]+) ]]; then
+  #           MAJOR=${BASH_REMATCH[1]}
+  #           MINOR=${BASH_REMATCH[2]}
+  #           PATCH=${BASH_REMATCH[3]}
+  #           sed -i "s/major_version = .*/major_version = \"$MAJOR\"/" sources/pyside2/pyside_version.py sources/shiboken2/shiboken_version.py
+  #           sed -i "s/minor_version = .*/minor_version = \"$MINOR\"/" sources/pyside2/pyside_version.py sources/shiboken2/shiboken_version.py
+  #           sed -i "s/patch_version = .*/patch_version = \"$PATCH\"/" sources/pyside2/pyside_version.py sources/shiboken2/shiboken_version.py
+  #         fi
 
-      - name: Build Wheels
-        env:
-          LLVM_INSTALL_DIR: /usr
-        run: |
-          python setup.py install \
-              --qmake=/opt/qt/5.15.2/gcc_64/bin/qmake \
-              --parallel=8 \
-              --build-tests \
-              --ignore-git \
-              --build-type=all \
-              --standalone
+  #     - name: Build Wheels
+  #       env:
+  #         LLVM_INSTALL_DIR: /usr
+  #       run: |
+  #         python setup.py install \
+  #             --qmake=/opt/qt/5.15.2/gcc_64/bin/qmake \
+  #             --parallel=1 \
+  #             --build-tests \
+  #             --ignore-git \
+  #             --build-type=all \
+  #             --standalone \
+  #             --no-pyi
           
-          echo "Packaging wheels..."
-          python setup.py bdist_wheel --only-package --standalone --qmake=/opt/qt/5.15.2/gcc_64/bin/qmake
+  #         echo "Packaging wheels..."
+  #         python setup.py bdist_wheel --only-package --standalone --no-pyi --qmake=/opt/qt/5.15.2/gcc_64/bin/qmake
 
-      - name: Upload Artifacts
-        uses: actions/upload-artifact@v4
-        with:
-          name: linux-wheels
-          path: dist/*.whl
+  #     - name: Upload Artifacts
+  #       uses: actions/upload-artifact@v4
+  #       with:
+  #         name: linux-wheels
+  #         path: dist/*.whl
 
   build-windows:
     runs-on: windows-2022
@@ -101,24 +102,55 @@ jobs:
         with:
           python-version: '3.12'
 
-      - name: Install dependencies
+      - name: Install build tools
+        shell: powershell
         run: |
-          python -m pip install aqtinstall
-          mkdir C:\Qt
-          python -m aqt install-qt windows desktop 5.15.2 win64_msvc2019_64 --outputdir C:\Qt
-          python -m aqt install-tool windows desktop tools_libclang_10_0_0 win64_msvc2019_64 --outputdir C:\Qt
+          choco install -y llvm --version=14.0.6 --allow-downgrade
+          choco install -y visualstudio2019buildtools --version 16.11.3 --allow-downgrade
+          choco install -y visualstudio2019-workload-vctools --version 1.0.1 --allow-downgrade
+
+      - name: Install Qt
+        shell: powershell
+        env:
+          QT_EMAIL: ${{ secrets.QT_EMAIL }}
+          QT_PASSWORD: ${{ secrets.QT_PASSWORD }}
+        run: |
+          $exePath = "$env:TEMP/qt-installer.exe"
+          curl.exe -L 'https://download.qt.io/archive/online_installers/4.4/qt-unified-windows-x64-4.4.1-online.exe' --output "$exePath"
+          Write-Host "Installing Qt 5.15.2..."
+          & "$exePath" --email "$env:QT_EMAIL" --pw "$env:QT_PASSWORD" install `
+            qt.qt5.5152.qtwebengine qt.qt5.5152.qtscript qt.qt5.5152.win64_msvc2019_64 `
+            qt.qt5.5152.qtwebglplugin.win64_msvc2019_64 qt.qt5.5152.qtwebengine.win64_msvc2019_64 qt.qt5.5152.qtvirtualkeyboard.win64_msvc2019_64 `
+            qt.qt5.5152.qtscript.win64_msvc2019_64 qt.qt5.5152.qtquicktimeline.win64_msvc2019_64 qt.qt5.5152.qtquick3d.win64_msvc2019_64 `
+            qt.qt5.5152.qtpurchasing.win64_msvc2019_64 qt.qt5.5152.qtnetworkauth.win64_msvc2019_64 qt.qt5.5152.qtlottie.win64_msvc2019_64 `
+            qt.qt5.5152.qtdatavis3d.win64_msvc2019_64 qt.qt5.5152.qtcharts.win64_msvc2019_64 qt.qt5.5152.debug_info.win64_msvc2019_64 `
+            --root C:\Qt --auto-answer telemetry-question=No,AssociateCommonFiletypes=Yes --accept-licenses --accept-obligations `
+            --confirm-command --accept-messages --filter-packages "DisplayName=Qt 5.15.2"
+
+      - name: Prepare Local Workspace
+        shell: powershell
+        run: |
+          $local_work = "C:\pyside_work"
+          if (Test-Path $local_work) { Remove-Item -Recurse -Force $local_work }
+          New-Item -ItemType Directory -Path $local_work -Force
+          Write-Host "Copying source to C:\pyside_work..."
+          # Robocopy exit codes < 8 are successful.
+          robocopy . $local_work /E /MT:32 /XD .git pyside3_build pyside3_install build dist /NFL /NDL /NJH /NJS /nc /ns /np
+          if ($LASTEXITCODE -ge 8) { throw "Robocopy failed with code $LASTEXITCODE" }
+          return 0
 
       - name: Install requirements
         run: |
+          cd C:\pyside_work
           python -m pip install -r requirements.txt
 
       - name: Prepare Version
         shell: bash
         run: |
+          cd /c/pyside_work
           VERSION=${{ github.ref_name }}
           VERSION=${VERSION#v}
           echo "PYSIDE2_VERSION_OVERRIDE=$VERSION" >> $GITHUB_ENV
-          # Also update the version files for CMake consistency
           if [[ $VERSION =~ ^([0-9]+)\.([0-9]+)\.([0-9]+) ]]; then
             MAJOR=${BASH_REMATCH[1]}
             MINOR=${BASH_REMATCH[2]}
@@ -129,21 +161,71 @@ jobs:
           fi
 
       - name: Build Wheels
-        shell: cmd
+        shell: powershell
         env:
-          LLVM_INSTALL_DIR: C:\Qt\Tools\libclang
+          LLVM_INSTALL_DIR: C:\Program Files\LLVM
         run: |
-          set PATH=C:\Qt\5.15.2\msvc2019_64\bin;%PATH%
-          python setup.py install ^
-              --qmake=C:\Qt\5.15.2\msvc2019_64\bin\qmake.exe ^
-              --parallel=8 ^
-              --build-tests ^
-              --ignore-git ^
-              --build-type=all ^
-              --standalone
+          cd C:\pyside_work
           
-          echo "Packaging wheels..."
-          python setup.py bdist_wheel --only-package --standalone --qmake=C:\Qt\5.15.2\msvc2019_64\bin\qmake.exe
+          # Force MSVC 2019 environment from the BuildTools installation
+          $vcvars = 'C:\Program Files (x86)\Microsoft Visual Studio\2019\BuildTools\VC\Auxiliary\Build\vcvarsall.bat'
+          Write-Host "Activating MSVC 2019 environment..."
+          $env_vars = cmd /c "`"$vcvars`" amd64 && set" | Where-Object { $_ -match '^[A-Za-z_].*=' }
+          foreach ($line in $env_vars) {
+              $name, $value = $line -split '=', 2
+              [System.Environment]::SetEnvironmentVariable($name, $value, 'Process')
+          }
+          
+          $env:PATH = "C:\Qt\5.15.2\msvc2019_64\bin;$env:PATH"
+
+          $py_ver_short = python -c "import sys; print('{}.{}'.format(sys.version_info.major, sys.version_info.minor))"
+          $build_name = "p$py_ver_short"
+          $install_dir = "C:\pyside_work\pyside3_install\$build_name"
+          $build_dir = "C:\pyside_work\pyside3_build\$build_name"
+          $site_packages = "$install_dir\Lib\site-packages"
+
+          if (Test-Path $install_dir) { Remove-Item -Recurse -Force $install_dir }
+          New-Item -ItemType Directory -Path $site_packages -Force
+
+          $pth_content = @"
+          import os
+          import sys
+          bin_dir = r'$install_dir\bin'
+          qt_bin = r'C:\Qt\5.15.2\msvc2019_64\bin'
+          libpyside_dir = r'$build_dir\pyside2\libpyside'
+          if os.path.isdir(bin_dir): os.add_dll_directory(bin_dir)
+          if os.path.isdir(qt_bin): os.add_dll_directory(qt_bin)
+          if os.path.isdir(libpyside_dir): os.add_dll_directory(libpyside_dir)
+          "@
+          Set-Content -Path "$site_packages\fix_dll_paths.pth" -Value $pth_content
+
+          $linux_style_site = "$install_dir\lib\python\site-packages"
+          New-Item -ItemType Directory -Path $linux_style_site -Force
+          New-Item -ItemType Directory -Path "$site_packages\shiboken2" -Force
+          New-Item -ItemType Directory -Path "$build_dir\pyside2\PySide2" -Force
+          New-Item -ItemType Junction -Path "$linux_style_site\shiboken2" -Value "$site_packages\shiboken2"
+          New-Item -ItemType Junction -Path "$linux_style_site\PySide2" -Value "$build_dir\pyside2\PySide2"
+
+          $env:BUILD_PREFIX = $install_dir
+          $env:PY_VER = ''
+          $env:PYTHONPATH = "$site_packages;$build_dir\pyside2"
+
+          Write-Host "Starting PySide2 build in C:\pyside_work..." -ForegroundColor Cyan
+          python setup.py bdist_wheel `
+              --qmake=C:\Qt\5.15.2\msvc2019_64\bin\qmake.exe `
+              --cmake='C:\Program Files\CMake\bin\cmake.exe' `
+              --ignore-git `
+              --shorter-paths `
+              --make-spec=ninja `
+              --build-type=all `
+              --parallel=1 `
+              --no-pyi `
+              --skip-modules=QtAxContainer
+          
+          if (Test-Path dist) {
+            if (-not (Test-Path $env:GITHUB_WORKSPACE\dist)) { New-Item -ItemType Directory -Path $env:GITHUB_WORKSPACE\dist -Force }
+            Copy-Item -Path dist\*.whl -Destination $env:GITHUB_WORKSPACE\dist -Force
+          }
 
       - name: Upload Artifacts
         uses: actions/upload-artifact@v4
@@ -152,16 +234,17 @@ jobs:
           path: dist/*.whl
 
   release:
-    needs: [build-linux, build-windows]
+    # needs: [build-linux, build-windows]
+    needs: [build-windows]
     runs-on: ubuntu-latest
     permissions:
       contents: write
     steps:
-      - name: Download Linux wheels
-        uses: actions/download-artifact@v4
-        with:
-          name: linux-wheels
-          path: dist
+      # - name: Download Linux wheels
+      #   uses: actions/download-artifact@v4
+      #   with:
+      #     name: linux-wheels
+      #     path: dist
 
       - name: Download Windows wheels
         uses: actions/download-artifact@v4

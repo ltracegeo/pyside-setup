@@ -545,7 +545,7 @@ class PysideBuild(_build, DistUtilsCommandMixin):
         qt_version = get_qt_version()
 
         # Update the PATH environment variable
-        additional_paths = [self.py_scripts_dir, qt_dir]
+        additional_paths = [self.py_scripts_dir, self.py_prefix, qt_dir]
 
         # Add Clang to path for Windows.
         # Revisit once Clang is bundled with Qt.
@@ -553,8 +553,10 @@ class PysideBuild(_build, DistUtilsCommandMixin):
                 and LooseVersion(self.qtinfo.version) >= LooseVersion("5.7.0")):
             clang_dir = detect_clang()
             if clang_dir[0]:
-                clangBinDir = os.path.join(clang_dir[0], 'bin')
-                if clangBinDir not in os.environ.get('PATH'):
+                clangBinDir = os.path.normpath(os.path.join(clang_dir[0], 'bin'))
+                path_env = os.environ.get('PATH', '')
+                path_list = [os.path.normpath(p).lower() for p in path_env.split(os.pathsep)]
+                if clangBinDir.lower() not in path_list:
                     log.info("Adding {} as detected by {} to PATH".format(clangBinDir,
                                                                           clang_dir[1]))
                     additional_paths.append(clangBinDir)
@@ -825,6 +827,9 @@ class PysideBuild(_build, DistUtilsCommandMixin):
 
         if OPTION["VERBOSE_BUILD"]:
             cmake_cmd.append("-DCMAKE_VERBOSE_MAKEFILE:BOOL=ON")
+
+        if OPTION["NO_PYI"]:
+            cmake_cmd.append("-DNO_PYI=TRUE")
 
         if OPTION["SANITIZE_ADDRESS"]:
             # Some simple sanity checking. Only use at your own risk.

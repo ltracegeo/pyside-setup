@@ -97,6 +97,7 @@ if(USE_XVFB)
 endif()
 
 option(BUILD_TESTS "Build tests." TRUE)
+option(NO_PYI "Do not generate .pyi files." FALSE)
 option(ENABLE_VERSION_SUFFIX "Used to use current version in suffix to generated files. This is used to allow multiples versions installed simultaneous." FALSE)
 set(LIB_SUFFIX "" CACHE STRING "Define suffix of directory name (32/64)" )
 set(LIB_INSTALL_DIR "lib${LIB_SUFFIX}" CACHE PATH "The subdirectory relative to the install prefix where libraries will be installed (default is /lib${LIB_SUFFIX})" FORCE)

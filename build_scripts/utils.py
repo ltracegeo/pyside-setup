@@ -190,7 +190,11 @@ def find_vcdir(version):
 
 
 def init_msvc_env(platform_arch, build_type):
-    import setuptools; from distutils.msvc9compiler import VERSION as MSVC_VERSION
+    try:
+        from distutils.msvc9compiler import VERSION as MSVC_VERSION
+    except ImportError:
+        # Fallback for Python 3.12+ where msvc9compiler is removed
+        MSVC_VERSION = 14.0  # Default to a modern MSVC version (VS 2015+)
 
     log.info("Searching MSVC compiler version {}".format(MSVC_VERSION))
     vcdir_path = find_vcdir(MSVC_VERSION)

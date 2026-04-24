@@ -213,6 +213,25 @@ def generate_pyi(import_name, outpath, options):
     """
     plainname = import_name.split(".")[-1]
     outfilepath = os.path.join(outpath, plainname + ".pyi")
+
+    # PYSIDE-2720: Final attempt to ensure DLLs are found on Windows
+    if sys.platform == "win32" and hasattr(os, "add_dll_directory"):
+        try:
+            import PySide2
+            pyside_dir = os.path.dirname(PySide2.__file__)
+            if os.path.isdir(pyside_dir):
+                os.add_dll_directory(pyside_dir)
+            
+            # Quirk for QtWebEngineCore: pre-load its known dependencies
+            if plainname == "QtWebEngineCore":
+                for dep in ["QtQuick", "QtWebChannel", "QtPositioning"]:
+                    try:
+                        __import__("PySide2." + dep)
+                    except Exception:
+                        pass
+        except Exception:
+            pass
+
     top = __import__(import_name)
     obj = getattr(top, plainname)
     if not getattr(obj, "__file__", None) or os.path.isdir(obj.__file__):
@@ -263,16 +282,58 @@ def generate_pyi(import_name, outpath, options):
 
 def generate_all_pyi(outpath, options):
     ps = os.pathsep
+    # PYSIDE-2720: On Windows, we need to process .pth files even in PYTHONPATH
+    # because the build script uses them to register DLL directories for
+    # Python 3.8+. site.addsitedir() handles this.
+    if sys.platform == "win32":
+        import site
+        pythonpath = os.environ.get("PYTHONPATH", "")
+        for p in pythonpath.split(ps):
+            if p and os.path.isdir(p):
+                site.addsitedir(os.path.normpath(p))
+        
+        # Also ensure PATH is honored for DLL loading in Python 3.8+
+        if hasattr(os, "add_dll_directory"):
+            for p in os.environ.get("PATH", "").split(os.pathsep):
+                if p:
+                    # Normalize path and ensure it's absolute for add_dll_directory
+                    abs_p = os.path.abspath(p.strip('"'))
+                    if os.path.isdir(abs_p):
+                        try:
+                            os.add_dll_directory(abs_p)
+                        except (OSError, AttributeError):
+                            pass
+
     if options.sys_path:
         # make sure to propagate the paths from sys_path to subprocesses
         sys_path = [os.path.normpath(_) for _ in options.sys_path]
-        sys.path[0:0] = sys_path
+        # Use site.addsitedir to handle .pth files, which is necessary for
+        # os.add_dll_directory on Windows (Python 3.8+).
+        import site
+        for p in reversed(sys_path):
+            site.addsitedir(p)
+            # site.addsitedir appends to the end of sys.path.
+            # We must ensure these paths are at the front so they take precedence,
+            # especially on Linux during build time.
+            if p in sys.path:
+                sys.path.remove(p)
+            sys.path.insert(0, p)
         pypath = ps.join(sys_path)
         os.environ["PYTHONPATH"] = pypath
 
     # now we can import
     global PySide2, inspect, typing, HintingEnumerator, build_brace_pattern
     import PySide2
+    
+    # On Windows, ensure the PySide2 package directory is in the DLL search path
+    if sys.platform == "win32" and hasattr(os, "add_dll_directory"):
+        pyside_dir = os.path.dirname(PySide2.__file__)
+        if os.path.isdir(pyside_dir):
+            try:
+                os.add_dll_directory(pyside_dir)
+            except Exception:
+                pass
+
     from PySide2.support.signature import inspect, typing
     from PySide2.support.signature.lib.enum_sig import HintingEnumerator
     from PySide2.support.signature.lib.tool import build_brace_pattern
